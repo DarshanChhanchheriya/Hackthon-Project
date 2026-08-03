@@ -42,10 +42,17 @@
         <p class="text-xs mt-3" style="color:var(--text-muted)">Configured via backend environment variables (FACE_MATCH_THRESHOLD, QR_EXPIRY_SECONDS).</p>
       </div>
 
-      <div class="card p-6 border-red-200">
-        <h3 class="font-bold mb-2 text-red-500">Danger Zone</h3>
-        <p class="text-sm mb-4" style="color:var(--text-muted)">Sign out of your account on this device.</p>
-        <button onclick="window.Auth.signOut()" class="btn btn-danger">Sign Out</button>
+      <div class="card p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:var(--accent-soft); color:var(--accent)">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </div>
+          <div>
+            <h3 class="font-bold">Session</h3>
+            <p class="text-xs" style="color:var(--text-muted)">Sign out of your account on this device.</p>
+          </div>
+        </div>
+        <button onclick="window.Auth.signOut()" class="btn btn-secondary">Sign Out</button>
       </div>
     </main>
   </div>
