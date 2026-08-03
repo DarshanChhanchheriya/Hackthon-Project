@@ -78,7 +78,19 @@
       <div class="mb-4 sm:col-span-2"><label class="text-sm font-semibold mb-1 block">Email</label><input type="email" id="email" required class="input" placeholder="Enter your email address" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" /></div>
 
       <div id="student-fields" class="mb-4"><label class="text-sm font-semibold mb-1 block">Roll Number</label><input type="text" id="roll_number" class="input" placeholder="CSE2026001" autocomplete="off" /></div>
-      <div id="semester-field" class="mb-4"><label class="text-sm font-semibold mb-1 block">Semester</label><input type="number" id="semester" class="input" min="1" max="8" value="1" autocomplete="off" /></div>
+      <div id="semester-field" class="mb-4">
+        <label class="text-sm font-semibold mb-1 block">Semester</label>
+        <select id="semester" class="input" autocomplete="off">
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
+          <option value="3">Semester 3</option>
+          <option value="4">Semester 4</option>
+          <option value="5">Semester 5</option>
+          <option value="6">Semester 6</option>
+          <option value="7">Semester 7</option>
+          <option value="8">Semester 8</option>
+        </select>
+      </div>
       <div id="teacher-fields" class="mb-4 hidden sm:col-span-2">
         <label class="text-sm font-semibold mb-1 block">Employee ID</label>
         <input type="text" id="employee_id" class="input" placeholder="EMP1024" autocomplete="off" />
