@@ -332,8 +332,9 @@ create policy "notifications_insert" on notifications for insert with check (tru
 create policy "analytics_select" on analytics for select
   using (current_role_name() in ('admin', 'teacher'));
 
--- departments: readable by everyone authenticated, writable by admin
-create policy "departments_select" on departments for select using (auth.role() = 'authenticated');
+-- departments: publicly readable (needed by the registration form before
+-- a user has an account/session), writable by admin only
+create policy "departments_select" on departments for select using (true);
 create policy "departments_admin_write" on departments for all using (current_role_name() = 'admin');
 
 -- attendance_sessions: any authenticated user can see active sessions
