@@ -137,6 +137,29 @@ html, body {
   transition: background-color 9999s ease-in-out 0s;
 }
 
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 15px;
+}
+/* Themed <option> list — supported in Chromium/Edge; falls back to native
+   OS styling elsewhere without breaking anything. */
+select.input option {
+  background: var(--bg-elev);
+  color: var(--text);
+}
+select.input option:checked,
+select.input option:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
