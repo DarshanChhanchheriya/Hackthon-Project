@@ -1,0 +1,32 @@
+# Cloud deployment (Render) — everything from requirements.txt EXCEPT
+# dlib/face_recognition. Render's native Python runtime has no root access
+# during build, so it can't run apt-get to install the CMake/C++ toolchain
+# dlib needs to compile from source. The backend already handles this
+# gracefully: face endpoints return a 503 with a clear message instead of
+# crashing the whole app, so every other feature (auth, QR, leave,
+# analytics, reports, sessions, teacher punch-in via non-face fallback)
+# still works in production.
+#
+# To get real face recognition running in the cloud too, switch this
+# service to a Docker-based Render deploy with a Dockerfile that installs
+# cmake + build-essential, then use requirements.txt (not this file).
+
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.9
+pydantic[email]>=2.9
+pydantic-settings>=2.5
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+supabase==2.7.4
+opencv-python-headless>=4.10
+numpy>=1.26
+qrcode[pil]==7.4.2
+reportlab==4.2.2
+openpyxl==3.1.5
+pandas>=2.2
+python-dotenv==1.0.1
+slowapi==0.1.9
+loguru==0.7.2
+Pillow>=10.4

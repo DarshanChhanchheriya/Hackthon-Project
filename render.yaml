@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: "apt-get update && apt-get install -y cmake build-essential && pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements-cloud.txt"
     startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: ENV
@@ -20,6 +20,8 @@ services:
       - key: CORS_ORIGINS
         value: "https://your-app.vercel.app"
       - key: FACE_MATCH_THRESHOLD
-        value: "0.90"
+        value: "0.70"
+      - key: FACE_DISTANCE_TOLERANCE
+        value: "0.6"
       - key: QR_EXPIRY_SECONDS
         value: "120"
