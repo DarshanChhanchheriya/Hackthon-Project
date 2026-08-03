@@ -76,7 +76,7 @@ create table teachers (
 -- ------------------------------------------------------------
 create table admins (
   id uuid primary key references profiles (id) on delete cascade,
-  employee_id text not null unique,
+  employee_id text unique,
   created_at timestamptz not null default now()
 );
 
