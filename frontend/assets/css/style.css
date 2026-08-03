@@ -57,6 +57,13 @@ html, body {
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   transition: background 0.25s ease, color 0.25s ease;
   scroll-behavior: smooth;
+  /* Site-wide guard: decorative absolutely-positioned elements (hero-glow,
+     etc.) can extend past the viewport by design on some pages/widths —
+     this clips any such overflow globally instead of patching each page's
+     <body> class individually, so no future page can reintroduce a
+     horizontal scrollbar on any device size. */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }

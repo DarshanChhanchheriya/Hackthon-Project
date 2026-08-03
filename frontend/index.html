@@ -6,8 +6,50 @@
 <title>Attendify — Smart AI Attendance System</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="assets/css/style.css" />
+<style>
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem; color: #fff;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .feature-card:hover .feature-icon { transform: translateY(-4px) scale(1.06); }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .icon-blue { background: linear-gradient(135deg, #2563eb, #4f8dff); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35); }
+  .icon-purple { background: linear-gradient(135deg, #7c3aed, #a78bfa); box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35); }
+  .icon-green { background: linear-gradient(135deg, #16a34a, #4ade80); box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35); }
+  .icon-amber { background: linear-gradient(135deg, #d97706, #fbbf24); box-shadow: 0 8px 20px rgba(217, 119, 6, 0.35); }
+  .icon-red { background: linear-gradient(135deg, #dc2626, #f87171); box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35); }
+  .icon-teal { background: linear-gradient(135deg, #0d9488, #2dd4bf); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35); }
+
+  .step-num {
+    width: 40px; height: 40px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; font-weight: 800; margin-bottom: 0.75rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  }
+  .step-line-connector {
+    position: absolute; top: 20px; left: calc(50% + 20px); right: calc(-50% + 20px);
+    height: 2px; background: linear-gradient(90deg, var(--accent), transparent);
+    display: none;
+  }
+  @media (min-width: 640px) { .step-line-connector { display: block; } }
+
+  .role-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent); margin-bottom: 0.75rem;
+  }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.in-view { opacity: 1; transform: translateY(0); }
+
+  @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .float-badge { animation: floaty 3.5s ease-in-out infinite; }
+</style>
 </head>
-<body class="min-h-screen relative overflow-x-hidden">
+<body class="min-h-screen relative">
 <div class="hero-glow"></div>
 
 <header class="relative z-10 max-w-7xl mx-auto flex items-center justify-between px-6 py-6">
@@ -16,9 +58,9 @@
     <span class="font-extrabold text-lg tracking-tight"><span class="gradient-text">Attendify</span></span>
   </div>
   <nav class="hidden md:flex items-center gap-8 text-sm font-medium" style="color:var(--text-muted)">
-    <a href="#features" class="hover:text-blue-500">Features</a>
-    <a href="#how" class="hover:text-blue-500">How it works</a>
-    <a href="#roles" class="hover:text-blue-500">Roles</a>
+    <a href="#features" class="hover:text-blue-500 transition-colors">Features</a>
+    <a href="#how" class="hover:text-blue-500 transition-colors">How it works</a>
+    <a href="#roles" class="hover:text-blue-500 transition-colors">Roles</a>
   </nav>
   <div class="flex items-center gap-3">
     <button onclick="toggleTheme()" class="btn btn-secondary !p-2"><span data-theme-icon>🌙</span></button>
@@ -29,14 +71,14 @@
 
 <main class="relative z-10 max-w-7xl mx-auto px-6">
   <section class="text-center pt-16 pb-20 fade-in">
-    <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold badge-leave mb-6">
+    <span class="float-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold badge-leave mb-6">
       🚀 Built for HackNova 2026 — Smart IT Solutions
     </span>
     <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight">
-      Attendance, <span class="gradient-text">automated</span><br class="hidden sm:block" /> by face &amp; QR — in seconds.
+      Attendance, <span class="gradient-text">automated</span><br class="hidden sm:block" /> by face recognition — in seconds.
     </h1>
     <p class="mt-6 text-lg max-w-2xl mx-auto" style="color:var(--text-muted)">
-      Replace error-prone manual roll calls with AI face recognition and secure QR check-ins.
+      Replace error-prone manual roll calls with AI face recognition and a QR backup.
       Real-time analytics, leave management, and one-click reports for students, teachers and admins.
     </p>
     <div class="mt-10 flex items-center justify-center gap-4">
@@ -45,18 +87,18 @@
     </div>
   </section>
 
-  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-20">
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-20 reveal">
     <div class="card p-5 text-center">
       <p class="text-3xl font-extrabold gradient-text">99.2%</p>
       <p class="text-xs mt-1" style="color:var(--text-muted)">Face match accuracy</p>
     </div>
     <div class="card p-5 text-center">
       <p class="text-3xl font-extrabold gradient-text">&lt;2s</p>
-      <p class="text-xs mt-1" style="color:var(--text-muted)">Average mark time</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">Average check-in time</p>
     </div>
     <div class="card p-5 text-center">
-      <p class="text-3xl font-extrabold gradient-text">120s</p>
-      <p class="text-xs mt-1" style="color:var(--text-muted)">QR session expiry</p>
+      <p class="text-3xl font-extrabold gradient-text">24/7</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">Real-time notifications</p>
     </div>
     <div class="card p-5 text-center">
       <p class="text-3xl font-extrabold gradient-text">3</p>
@@ -65,33 +107,83 @@
   </section>
 
   <section id="features" class="pb-20">
-    <h2 class="text-3xl font-extrabold text-center">Everything a campus needs</h2>
-    <p class="text-center mt-2" style="color:var(--text-muted)">One platform for face recognition, QR check-ins, leave, and analytics.</p>
+    <h2 class="text-3xl font-extrabold text-center reveal">Everything a campus needs</h2>
+    <p class="text-center mt-2 reveal" style="color:var(--text-muted)">One platform for face recognition, QR check-ins, leave, and analytics.</p>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
-      <div class="card p-6"><div class="text-3xl mb-3">🧠</div><h3 class="font-bold mb-1">Face Recognition</h3><p class="text-sm" style="color:var(--text-muted)">OpenCV + face_recognition with liveness &amp; blink detection to stop photo spoofing.</p></div>
-      <div class="card p-6"><div class="text-3xl mb-3">📱</div><h3 class="font-bold mb-1">QR Attendance</h3><p class="text-sm" style="color:var(--text-muted)">Secure, auto-expiring QR sessions prevent duplicate scans and proxy attendance.</p></div>
-      <div class="card p-6"><div class="text-3xl mb-3">📊</div><h3 class="font-bold mb-1">Live Analytics</h3><p class="text-sm" style="color:var(--text-muted)">Daily, weekly, monthly trends with department &amp; subject breakdowns.</p></div>
-      <div class="card p-6"><div class="text-3xl mb-3">🗓️</div><h3 class="font-bold mb-1">Leave Management</h3><p class="text-sm" style="color:var(--text-muted)">Students apply, teachers approve — reflected instantly in attendance history.</p></div>
-      <div class="card p-6"><div class="text-3xl mb-3">📄</div><h3 class="font-bold mb-1">One-click Reports</h3><p class="text-sm" style="color:var(--text-muted)">Export PDF, Excel or CSV for any period, department or student.</p></div>
-      <div class="card p-6"><div class="text-3xl mb-3">🔐</div><h3 class="font-bold mb-1">Secure by Design</h3><p class="text-sm" style="color:var(--text-muted)">Supabase Auth, JWT sessions, RLS policies, and rate-limited APIs.</p></div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-blue"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></div>
+        <h3 class="font-bold mb-1">Face Recognition</h3>
+        <p class="text-sm" style="color:var(--text-muted)">OpenCV + face_recognition with liveness &amp; blink detection to stop photo spoofing.</p>
+      </div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-purple"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M4 4h4v4H4V4zm0 12h4v4H4v-4zm12-12h4v4h-4V4z"/></svg></div>
+        <h3 class="font-bold mb-1">QR Attendance</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Secure, auto-expiring QR sessions as a lightweight backup check-in method.</p>
+      </div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-green"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+        <h3 class="font-bold mb-1">Live Analytics</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Daily, weekly, monthly trends with department &amp; subject breakdowns.</p>
+      </div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-amber"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+        <h3 class="font-bold mb-1">Leave Management</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Students apply, teachers approve — reflected instantly in attendance history.</p>
+      </div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-red"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V5a2 2 0 012-2h6l4 4v2M9 17h6a2 2 0 002-2v-3"/></svg></div>
+        <h3 class="font-bold mb-1">One-click Reports</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Export PDF, Excel or CSV for any period, department or student.</p>
+      </div>
+      <div class="card feature-card p-6 reveal">
+        <div class="feature-icon icon-teal"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+        <h3 class="font-bold mb-1">Secure by Design</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Supabase Auth, JWT sessions, RLS policies, and rate-limited APIs.</p>
+      </div>
     </div>
   </section>
 
   <section id="how" class="pb-20">
-    <h2 class="text-3xl font-extrabold text-center">How it works</h2>
+    <h2 class="text-3xl font-extrabold text-center reveal">How it works</h2>
     <div class="grid sm:grid-cols-3 gap-5 mt-10">
-      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">1</div><h3 class="font-bold mb-1">Register</h3><p class="text-sm" style="color:var(--text-muted)">Students upload 5 face samples; admins onboard teachers &amp; departments.</p></div>
-      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">2</div><h3 class="font-bold mb-1">Check in</h3><p class="text-sm" style="color:var(--text-muted)">Teacher starts a session — students are recognized by camera or scan a QR code.</p></div>
-      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">3</div><h3 class="font-bold mb-1">Track &amp; report</h3><p class="text-sm" style="color:var(--text-muted)">Dashboards update live; export reports whenever you need them.</p></div>
+      <div class="card p-6 relative reveal">
+        <div class="step-num">1</div>
+        <div class="step-line-connector"></div>
+        <h3 class="font-bold mb-1">Register</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Students complete face enrollment during signup; admins onboard teachers &amp; departments.</p>
+      </div>
+      <div class="card p-6 relative reveal">
+        <div class="step-num">2</div>
+        <div class="step-line-connector"></div>
+        <h3 class="font-bold mb-1">Check in</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Teacher starts a session — students get notified instantly and check in with their face.</p>
+      </div>
+      <div class="card p-6 relative reveal">
+        <div class="step-num">3</div>
+        <h3 class="font-bold mb-1">Track &amp; report</h3>
+        <p class="text-sm" style="color:var(--text-muted)">Dashboards update live; export reports whenever you need them.</p>
+      </div>
     </div>
   </section>
 
   <section id="roles" class="pb-24">
-    <h2 class="text-3xl font-extrabold text-center">Built for every role</h2>
+    <h2 class="text-3xl font-extrabold text-center reveal">Built for every role</h2>
     <div class="grid sm:grid-cols-3 gap-5 mt-10">
-      <div class="card p-6"><h3 class="font-bold mb-2">🎓 Student</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>View attendance %</li><li>Apply for leave</li><li>Scan QR / show face</li><li>Download reports</li></ul></div>
-      <div class="card p-6"><h3 class="font-bold mb-2">🧑‍🏫 Teacher</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Start/stop sessions</li><li>Generate QR codes</li><li>Approve leave</li><li>View class analytics</li></ul></div>
-      <div class="card p-6"><h3 class="font-bold mb-2">🛡️ Admin</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Manage students &amp; teachers</li><li>Assign departments</li><li>System-wide reports</li><li>Audit logs</li></ul></div>
+      <div class="card p-6 reveal">
+        <div class="role-icon"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.42A12.02 12.02 0 0121 17.5V19M6 10.5v5.25c0 .621 2.686 2.25 6 2.25s6-1.629 6-2.25V10.5"/></svg></div>
+        <h3 class="font-bold mb-2">Student</h3>
+        <ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>View attendance %</li><li>Apply for leave</li><li>Check in by face or QR</li><li>Download reports</li></ul>
+      </div>
+      <div class="card p-6 reveal">
+        <div class="role-icon"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+        <h3 class="font-bold mb-2">Teacher</h3>
+        <ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Start/stop sessions</li><li>Punch in/out by face</li><li>Approve leave</li><li>View class analytics</li></ul>
+      </div>
+      <div class="card p-6 reveal">
+        <div class="role-icon"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+        <h3 class="font-bold mb-2">Admin</h3>
+        <ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Manage students &amp; teachers</li><li>Assign departments</li><li>System-wide reports</li><li>Audit logs</li></ul>
+      </div>
     </div>
   </section>
 </main>
@@ -101,5 +193,19 @@
 </footer>
 
 <script src="assets/js/theme.js"></script>
+<script>
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in-view");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+</script>
 </body>
 </html>
