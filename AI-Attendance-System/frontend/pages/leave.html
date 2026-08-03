@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Leave Management — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-6">
+      <div id="student-apply" class="hidden card p-5 mb-5">
+        <h3 class="font-bold mb-3">Apply for Leave</h3>
+        <form id="apply-form" class="grid sm:grid-cols-3 gap-3">
+          <input type="date" id="start_date" required class="input" />
+          <input type="date" id="end_date" required class="input" />
+          <input type="text" id="reason" required class="input sm:col-span-3" placeholder="Reason for leave" />
+          <button type="submit" class="btn btn-primary sm:col-span-3">Submit Request</button>
+        </form>
+      </div>
+
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold">Leave Requests</h3>
+          <select id="status-filter" class="input !w-auto">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left" style="color:var(--text-muted)">
+              <th class="py-2 px-3">Student</th><th class="py-2 px-3">Reason</th><th class="py-2 px-3">Dates</th>
+              <th class="py-2 px-3">Status</th><th class="py-2 px-3"></th>
+            </tr></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="review-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4">
+  <div class="modal-backdrop absolute inset-0" onclick="UI.closeModal('review-modal')"></div>
+  <div class="card glass relative z-10 w-full max-w-md p-6">
+    <h3 class="font-bold text-lg mb-4">Review Leave Request</h3>
+    <input type="hidden" id="review-id" />
+    <label class="text-sm font-semibold mb-1 block">Note (optional)</label>
+    <textarea id="review-note" class="input mb-5" rows="3" placeholder="Reason for decision..."></textarea>
+    <div class="flex gap-3">
+      <button class="btn btn-danger flex-1" onclick="submitReview('rejected')">Reject</button>
+      <button class="btn btn-primary flex-1" onclick="submitReview('approved')">Approve</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let isStudent = false;
+
+  async function loadLeaves() {
+    const status = document.getElementById("status-filter").value;
+    const params = new URLSearchParams();
+    if (status) params.set("status_filter", status);
+
+    document.getElementById("table-body").innerHTML = UI.skeletonRows(5, 5);
+    const res = await api.get(`/leave?${params.toString()}`);
+    const rows = res.data || [];
+
+    document.getElementById("table-body").innerHTML =
+      rows
+        .map(
+          (l) => `<tr class="table-row border-t" style="border-color:var(--border)">
+        <td class="py-2 px-3 font-medium">${l.students?.profiles?.full_name || "—"} <span class="text-xs" style="color:var(--text-muted)">${l.students?.roll_number || ""}</span></td>
+        <td class="py-2 px-3 max-w-xs truncate">${l.reason}</td>
+        <td class="py-2 px-3">${UI.formatDate(l.start_date)} → ${UI.formatDate(l.end_date)}</td>
+        <td class="py-2 px-3">${UI.statusBadge(l.status)}</td>
+        <td class="py-2 px-3 text-right">
+          ${!isStudent && l.status === "pending" ? `<button class="text-blue-500 font-semibold text-xs" onclick="openReview('${l.id}')">Review</button>` : ""}
+        </td>
+      </tr>`
+        )
+        .join("") || `<tr><td colspan="5" class="py-8 text-center" style="color:var(--text-muted)">No leave requests found.</td></tr>`;
+  }
+
+  function openReview(id) {
+    document.getElementById("review-id").value = id;
+    document.getElementById("review-note").value = "";
+    UI.openModal("review-modal");
+  }
+
+  async function submitReview(decision) {
+    const id = document.getElementById("review-id").value;
+    await api.put(`/leave/${id}/review`, { status: decision, review_note: document.getElementById("review-note").value || null });
+    UI.toast(`Leave request ${decision}`, "success");
+    UI.closeModal("review-modal");
+    loadLeaves();
+  }
+
+  document.getElementById("status-filter").addEventListener("change", loadLeaves);
+
+  (async () => {
+    const { role } = await renderLayout("leave");
+    if (!role) return;
+    isStudent = role === "student";
+    document.getElementById("student-apply").classList.toggle("hidden", !isStudent);
+
+    document.getElementById("apply-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await api.post("/leave", {
+        reason: document.getElementById("reason").value,
+        start_date: document.getElementById("start_date").value,
+        end_date: document.getElementById("end_date").value,
+      });
+      UI.toast("Leave request submitted", "success");
+      e.target.reset();
+      loadLeaves();
+    });
+
+    loadLeaves();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
+      <div class="card p-6">
+        <h3 class="font-bold mb-4">Appearance</h3>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-semibold text-sm">Dark Mode</p>
+            <p class="text-xs" style="color:var(--text-muted)">Switch between light and dark themes.</p>
+          </div>
+          <button onclick="toggleTheme()" class="btn btn-secondary">Toggle <span data-theme-icon>🌙</span></button>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="font-bold mb-4">Security</h3>
+        <form id="password-form" class="grid gap-4 max-w-sm">
+          <div><label class="text-sm font-semibold mb-1 block">New Password</label><input type="password" id="new_password" minlength="8" required class="input" /></div>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </form>
+      </div>
+
+      <div id="admin-settings" class="hidden card p-6">
+        <h3 class="font-bold mb-4">System Settings</h3>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div><label class="text-sm font-semibold mb-1 block">Face Match Threshold</label><input class="input" value="90%" disabled /></div>
+          <div><label class="text-sm font-semibold mb-1 block">QR Expiry</label><input class="input" value="120 seconds" disabled /></div>
+        </div>
+        <p class="text-xs mt-3" style="color:var(--text-muted)">Configured via backend environment variables (FACE_MATCH_THRESHOLD, QR_EXPIRY_SECONDS).</p>
+      </div>
+
+      <div class="card p-6 border-red-200">
+        <h3 class="font-bold mb-2 text-red-500">Danger Zone</h3>
+        <p class="text-sm mb-4" style="color:var(--text-muted)">Sign out of your account on this device.</p>
+        <button onclick="window.Auth.signOut()" class="btn btn-danger">Sign Out</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  document.getElementById("password-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await sb.auth.updateUser({ password: document.getElementById("new_password").value });
+    if (error) return UI.toast(error.message, "error");
+    UI.toast("Password updated successfully", "success");
+    e.target.reset();
+  });
+
+  (async () => {
+    const { role } = await renderLayout("settings");
+    if (!role) return;
+    if (role === "admin") document.getElementById("admin-settings").classList.remove("hidden");
+  })();
+</script>
+</body>
+</html>

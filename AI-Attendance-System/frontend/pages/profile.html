@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
+      <div class="card p-6">
+        <div class="flex items-center gap-4 mb-6">
+          <div id="avatar" class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 flex items-center justify-center text-white font-bold text-2xl">U</div>
+          <div>
+            <h2 id="profile-name" class="font-bold text-lg">—</h2>
+            <p id="profile-role" class="text-sm capitalize" style="color:var(--text-muted)">—</p>
+          </div>
+        </div>
+        <form id="profile-form" class="grid sm:grid-cols-2 gap-4">
+          <div><label class="text-sm font-semibold mb-1 block">Full Name</label><input id="full_name" class="input" /></div>
+          <div><label class="text-sm font-semibold mb-1 block">Email</label><input id="email" class="input" disabled /></div>
+          <div><label class="text-sm font-semibold mb-1 block">Phone</label><input id="phone" class="input" /></div>
+          <div class="sm:col-span-2"><button type="submit" class="btn btn-primary">Save Profile</button></div>
+        </form>
+      </div>
+
+      <div id="face-card" class="hidden card p-6">
+        <h3 class="font-bold mb-1">Face Registration</h3>
+        <p class="text-sm mb-4" style="color:var(--text-muted)">Capture 5 clear photos from slightly different angles for accurate recognition.</p>
+        <div class="relative rounded-2xl overflow-hidden bg-black aspect-video max-w-lg">
+          <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+          <canvas id="canvas" class="hidden"></canvas>
+        </div>
+        <div class="flex items-center gap-3 mt-4">
+          <button id="camera-btn" class="btn btn-secondary">Start Camera</button>
+          <button id="capture-btn" class="btn btn-primary" disabled>📸 Capture (<span id="capture-count">0</span>/5)</button>
+          <button id="submit-face-btn" class="btn btn-primary hidden">Register Face</button>
+        </div>
+        <div id="thumbnails" class="grid grid-cols-5 gap-2 mt-4"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let captures = [];
+  let myProfile;
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await sb.from("profiles").update({
+      full_name: document.getElementById("full_name").value,
+      phone: document.getElementById("phone").value,
+    }).eq("id", myProfile.id);
+    UI.toast("Profile updated", "success");
+    myProfile.full_name = document.getElementById("full_name").value;
+    localStorage.setItem("profile", JSON.stringify(myProfile));
+  });
+
+  document.getElementById("camera-btn").addEventListener("click", async () => {
+    const video = document.getElementById("video");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+    video.srcObject = stream;
+    document.getElementById("capture-btn").disabled = false;
+  });
+
+  document.getElementById("capture-btn").addEventListener("click", () => {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    captures.push(dataUrl);
+    document.getElementById("capture-count").textContent = captures.length;
+
+    const img = document.createElement("img");
+    img.src = dataUrl;
+    img.className = "rounded-lg aspect-square object-cover border";
+    img.style.borderColor = "var(--border)";
+    document.getElementById("thumbnails").appendChild(img);
+
+    if (captures.length >= 5) {
+      document.getElementById("capture-btn").disabled = true;
+      document.getElementById("submit-face-btn").classList.remove("hidden");
+    }
+  });
+
+  document.getElementById("submit-face-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("submit-face-btn");
+    btn.disabled = true;
+    btn.textContent = "Registering...";
+    try {
+      const res = await api.post("/face/enroll", { owner_id: myProfile.id, images_base64: captures });
+      UI.toast(res.message, "success");
+      captures = [];
+      document.getElementById("thumbnails").innerHTML = "";
+      document.getElementById("capture-count").textContent = "0";
+      document.getElementById("submit-face-btn").classList.add("hidden");
+    } catch (_) {
+      btn.disabled = false;
+      btn.textContent = "Register Face";
+    }
+  });
+
+  (async () => {
+    const { profile, role } = await renderLayout("profile");
+    if (!profile) return;
+    myProfile = profile;
+
+    document.getElementById("profile-name").textContent = profile.full_name;
+    document.getElementById("profile-role").textContent = profile.role;
+    document.getElementById("avatar").textContent = profile.full_name[0].toUpperCase();
+    document.getElementById("full_name").value = profile.full_name;
+    document.getElementById("email").value = profile.email;
+    document.getElementById("phone").value = profile.phone || "";
+
+    if (role === "student" || role === "teacher") document.getElementById("face-card").classList.remove("hidden");
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create account — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+<style>
+  .role-card { cursor: pointer; }
+  .role-card input:checked + div { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .step-dot { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; transition: all .25s ease; }
+  .step-dot.done { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .step-dot.active { background: var(--bg-elev); border: 2px solid var(--accent); color: var(--accent); }
+  .step-dot.todo { background: var(--bg-elev); border: 2px solid var(--border); color: var(--text-muted); }
+  .step-line { flex: 1; height: 2px; background: var(--border); position: relative; overflow: hidden; }
+  .step-line span { position: absolute; inset: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transform: scaleX(0); transform-origin: left; transition: transform .35s ease; }
+  .step-line.done span { transform: scaleX(1); }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative px-4 py-10">
+<div class="hero-glow"></div>
+<div class="relative z-10 w-full max-w-lg">
+  <div class="text-center mb-6">
+    <a href="../index.html" class="inline-flex items-center gap-2">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold">A</div>
+      <span class="font-extrabold text-xl tracking-tight">Attendify<span class="gradient-text">AI</span></span>
+    </a>
+  </div>
+
+  <div class="flex items-center gap-2 max-w-xs mx-auto mb-6">
+    <div id="dot-1" class="step-dot active">1</div>
+    <div id="line-1" class="step-line"><span></span></div>
+    <div id="dot-2" class="step-dot todo">2</div>
+  </div>
+
+  <!-- STEP 1: Account details -->
+  <form id="register-form" class="card p-8 fade-in">
+    <h1 class="text-2xl font-extrabold mb-1">Create your account</h1>
+    <p class="text-sm mb-6" style="color:var(--text-muted)">Step 1 of 2 — your details.</p>
+
+    <label class="text-sm font-semibold mb-2 block">I am a</label>
+    <div class="grid grid-cols-3 gap-2 mb-5">
+      <label class="role-card"><input type="radio" name="role" value="student" checked class="hidden peer" />
+        <div class="border-2 rounded-xl p-3 text-center transition-all" style="border-color:var(--border)">
+          <div class="text-2xl mb-1">🎓</div><span class="text-xs font-semibold">Student</span>
+        </div>
+      </label>
+      <label class="role-card"><input type="radio" name="role" value="teacher" class="hidden peer" />
+        <div class="border-2 rounded-xl p-3 text-center transition-all" style="border-color:var(--border)">
+          <div class="text-2xl mb-1">🧑‍🏫</div><span class="text-xs font-semibold">Teacher</span>
+        </div>
+      </label>
+      <label class="role-card"><input type="radio" name="role" value="admin" class="hidden peer" />
+        <div class="border-2 rounded-xl p-3 text-center transition-all" style="border-color:var(--border)">
+          <div class="text-2xl mb-1">🛡️</div><span class="text-xs font-semibold">Admin</span>
+        </div>
+      </label>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div class="mb-4 sm:col-span-2"><label class="text-sm font-semibold mb-1 block">Full Name</label><input type="text" id="full_name" required class="input" placeholder="Jane Doe" /></div>
+      <div class="mb-4 sm:col-span-2"><label class="text-sm font-semibold mb-1 block">Email</label><input type="email" id="email" required class="input" placeholder="you@college.edu" /></div>
+
+      <div id="student-fields" class="mb-4"><label class="text-sm font-semibold mb-1 block">Roll Number</label><input type="text" id="roll_number" class="input" placeholder="CSE2026001" /></div>
+      <div id="semester-field" class="mb-4"><label class="text-sm font-semibold mb-1 block">Semester</label><input type="number" id="semester" class="input" min="1" max="8" value="1" /></div>
+      <div id="staff-fields" class="mb-4 hidden sm:col-span-2">
+        <label class="text-sm font-semibold mb-1 block">Employee ID</label>
+        <input type="text" id="employee_id" class="input" placeholder="EMP1024" />
+      </div>
+
+      <div class="mb-4 sm:col-span-2">
+        <label class="text-sm font-semibold mb-1 block">Department</label>
+        <select id="department_id" class="input"><option value="">Select department</option></select>
+      </div>
+
+      <div class="mb-2 sm:col-span-2">
+        <label class="text-sm font-semibold mb-1 block">Password</label>
+        <input type="password" id="password" required minlength="8" class="input" placeholder="Minimum 8 characters" />
+      </div>
+    </div>
+
+    <button type="submit" id="submit-btn" class="btn btn-primary w-full mt-4">Continue →</button>
+    <p class="text-sm text-center mt-6" style="color:var(--text-muted)">
+      Already have an account? <a href="login.html" class="font-semibold text-blue-500">Log in</a>
+    </p>
+  </form>
+
+  <!-- STEP 2: Face enrollment -->
+  <div id="face-step" class="hidden card p-8 fade-in text-center">
+    <h1 class="text-2xl font-extrabold mb-1">Register your face</h1>
+    <p class="text-sm mb-6" style="color:var(--text-muted)">Step 2 of 2 — this is how you'll check in to class. Capture 5 clear photos from slightly different angles.</p>
+
+    <div class="relative rounded-2xl overflow-hidden bg-black aspect-video">
+      <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none"></div>
+    </div>
+
+    <div class="flex justify-center gap-2 my-4">
+      <div id="dot-capture-1" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+      <div id="dot-capture-2" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+      <div id="dot-capture-3" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+      <div id="dot-capture-4" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+      <div id="dot-capture-5" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+    </div>
+
+    <div class="flex items-center justify-center gap-3">
+      <button id="camera-btn" class="btn btn-secondary">Start Camera</button>
+      <button id="capture-btn" class="btn btn-primary" disabled>📸 Capture (<span id="capture-count">0</span>/5)</button>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button id="skip-face-btn" class="btn btn-secondary flex-1">Skip for now</button>
+      <button id="finish-btn" class="btn btn-primary flex-1 hidden">Finish Setup ✓</button>
+    </div>
+    <p class="text-xs mt-4" style="color:var(--text-muted)">You can register your face later from Profile, but attendance won't work by camera until you do.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script>
+  document.querySelectorAll('input[name="role"]').forEach((r) =>
+    r.addEventListener("change", (e) => {
+      const isStudent = e.target.value === "student";
+      document.getElementById("student-fields").classList.toggle("hidden", !isStudent);
+      document.getElementById("semester-field").classList.toggle("hidden", !isStudent);
+      document.getElementById("staff-fields").classList.toggle("hidden", isStudent);
+    })
+  );
+
+  (async () => {
+    const { data } = await sb.from("departments").select("id, name").order("name");
+    const select = document.getElementById("department_id");
+    (data || []).forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.name;
+      select.appendChild(opt);
+    });
+  })();
+
+  let newUserId, newUserRole;
+
+  document.getElementById("register-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Creating account...";
+
+    const role = document.querySelector('input[name="role"]:checked').value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const payload = {
+      email,
+      password,
+      full_name: document.getElementById("full_name").value.trim(),
+      role,
+      department_id: document.getElementById("department_id").value || null,
+      roll_number: document.getElementById("roll_number").value || null,
+      employee_id: document.getElementById("employee_id").value || null,
+      semester: Number(document.getElementById("semester").value) || 1,
+    };
+
+    try {
+      const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.detail || "Registration failed");
+      newUserId = body.user_id;
+      newUserRole = role;
+
+      // Sign in immediately so we have an authenticated session for face enrollment
+      const { error: signInError } = await sb.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        UI.toast("Account created! Please log in — email verification may be required.", "success", 6000);
+        setTimeout(() => (window.location.href = "login.html"), 1200);
+        return;
+      }
+      localStorage.setItem("profile", JSON.stringify({ id: newUserId, full_name: payload.full_name, email, role }));
+
+      if (role === "admin") {
+        UI.toast("Account created! Redirecting...", "success");
+        setTimeout(() => (window.location.href = "dashboard.html"), 800);
+        return;
+      }
+
+      goToFaceStep();
+    } catch (err) {
+      UI.toast(err.message, "error");
+      btn.disabled = false;
+      btn.textContent = "Continue →";
+    }
+  });
+
+  function goToFaceStep() {
+    document.getElementById("register-form").classList.add("hidden");
+    document.getElementById("face-step").classList.remove("hidden");
+    document.getElementById("dot-1").className = "step-dot done";
+    document.getElementById("dot-1").textContent = "✓";
+    document.getElementById("line-1").classList.add("done");
+    document.getElementById("dot-2").className = "step-dot active";
+  }
+
+  let captures = [];
+  document.getElementById("camera-btn").addEventListener("click", async () => {
+    const video = document.getElementById("video");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      video.srcObject = stream;
+      document.getElementById("capture-btn").disabled = false;
+      document.getElementById("camera-btn").classList.add("hidden");
+    } catch (_) {
+      UI.toast("Camera access denied", "error");
+    }
+  });
+
+  document.getElementById("capture-btn").addEventListener("click", () => {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    captures.push(canvas.toDataURL("image/jpeg", 0.9));
+
+    const flash = document.getElementById("capture-flash");
+    flash.style.transition = "none";
+    flash.style.opacity = "0.85";
+    requestAnimationFrame(() => {
+      flash.style.transition = "opacity .3s ease";
+      flash.style.opacity = "0";
+    });
+
+    document.getElementById("capture-count").textContent = captures.length;
+    document.getElementById(`dot-capture-${captures.length}`).style.background = "var(--accent)";
+
+    if (captures.length >= 5) {
+      document.getElementById("capture-btn").disabled = true;
+      document.getElementById("finish-btn").classList.remove("hidden");
+      document.getElementById("skip-face-btn").textContent = "Cancel";
+    }
+  });
+
+  document.getElementById("finish-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("finish-btn");
+    btn.disabled = true;
+    btn.textContent = "Registering face...";
+    try {
+      await api.post("/face/enroll", { owner_id: newUserId, images_base64: captures });
+      UI.toast("Face registered! Welcome aboard.", "success");
+    } catch (_) {
+      UI.toast("Face registration failed — you can retry later from Profile.", "warning");
+    }
+    setTimeout(() => (window.location.href = "dashboard.html"), 800);
+  });
+
+  document.getElementById("skip-face-btn").addEventListener("click", () => {
+    window.location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>

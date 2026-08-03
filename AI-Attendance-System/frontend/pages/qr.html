@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Attendance — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-3xl mx-auto p-4 sm:p-6">
+      <div class="card p-4 mb-5 flex items-start gap-3" style="background:var(--accent-soft); border-color:var(--accent)">
+        <span class="text-lg">ℹ️</span>
+        <p class="text-sm">Face recognition is the primary attendance method — see <a href="attendance.html" class="font-semibold text-blue-500">Live Camera</a>. QR is a lightweight backup for when a camera isn't available.</p>
+      </div>
+
+      <div id="teacher-panel" class="hidden card p-6 text-center">
+        <h2 class="font-bold text-lg mb-1">Generate Backup QR Code</h2>
+        <p class="text-sm mb-5" style="color:var(--text-muted)">Students scan this instead of face check-in. Auto-expires after 2 minutes and blocks duplicate scans.</p>
+        <div class="grid sm:grid-cols-2 gap-3 max-w-md mx-auto mb-5">
+          <input id="subject" class="input" placeholder="Subject" />
+          <input id="section" class="input" placeholder="Section (e.g. A)" />
+        </div>
+        <button id="generate-btn" class="btn btn-primary">Generate QR</button>
+
+        <div id="qr-result" class="hidden mt-6">
+          <img id="qr-image" class="mx-auto rounded-2xl border w-56 h-56" style="border-color:var(--border)" />
+          <p class="mt-4 text-sm font-semibold">Expires in <span id="countdown" class="gradient-text">02:00</span></p>
+          <button id="close-btn" class="btn btn-secondary mt-4">Close Session</button>
+        </div>
+      </div>
+
+      <div id="student-panel" class="hidden card p-6 text-center">
+        <h2 class="font-bold text-lg mb-1">Scan Backup QR Code</h2>
+        <p class="text-sm mb-5" style="color:var(--text-muted)">Point your camera at the code shown by your teacher.</p>
+        <div class="relative rounded-2xl overflow-hidden bg-black aspect-square max-w-sm mx-auto">
+          <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+          <div class="absolute inset-8 scanner-frame pointer-events-none"></div>
+        </div>
+        <button id="scan-toggle" class="btn btn-primary mt-5">Start Camera</button>
+        <div class="my-4 text-xs font-semibold" style="color:var(--text-muted)">— or enter code manually —</div>
+        <div class="flex gap-2 max-w-sm mx-auto">
+          <input id="manual-token" class="input" placeholder="Paste QR token" />
+          <button id="manual-submit" class="btn btn-secondary">Submit</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let myProfile, countdownTimer, sessionId;
+
+  function startCountdown(seconds) {
+    clearInterval(countdownTimer);
+    let remaining = seconds;
+    const el = document.getElementById("countdown");
+    countdownTimer = setInterval(() => {
+      remaining--;
+      const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+      const s = String(remaining % 60).padStart(2, "0");
+      el.textContent = `${m}:${s}`;
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        document.getElementById("qr-result").classList.add("hidden");
+        UI.toast("QR code expired", "warning");
+      }
+    }, 1000);
+  }
+
+  async function generateQR() {
+    const res = await api.post("/qr/generate", {
+      teacher_id: myProfile.id,
+      subject: document.getElementById("subject").value || null,
+      section: document.getElementById("section").value || null,
+    });
+    sessionId = res.session_id;
+    document.getElementById("qr-image").src = res.qr_image_base64;
+    document.getElementById("qr-result").classList.remove("hidden");
+    startCountdown(res.expires_in_seconds);
+    UI.toast("QR code generated", "success");
+  }
+
+  async function closeSession() {
+    if (sessionId) await api.post(`/qr/close/${sessionId}`, {});
+    clearInterval(countdownTimer);
+    document.getElementById("qr-result").classList.add("hidden");
+    UI.toast("Session closed", "info");
+  }
+
+  let stream, scanLoop;
+  async function toggleScan() {
+    const video = document.getElementById("video");
+    const btn = document.getElementById("scan-toggle");
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+      cancelAnimationFrame(scanLoop);
+      btn.textContent = "Start Camera";
+      return;
+    }
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    video.srcObject = stream;
+    btn.textContent = "Stop Camera";
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const tick = () => {
+      if (!stream) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          submitToken(code.data);
+          return;
+        }
+      }
+      scanLoop = requestAnimationFrame(tick);
+    };
+    scanLoop = requestAnimationFrame(tick);
+  }
+
+  async function submitToken(token) {
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+      cancelAnimationFrame(scanLoop);
+      document.getElementById("scan-toggle").textContent = "Start Camera";
+    }
+    try {
+      const res = await api.post("/qr/scan", { token, student_id: myProfile.id });
+      UI.toast(res.message, "success");
+    } catch (_) { /* toast already shown by api.js */ }
+  }
+
+  (async () => {
+    const { profile, role } = await renderLayout("qr");
+    if (!profile) return;
+    myProfile = profile;
+
+    if (role === "student") {
+      document.getElementById("student-panel").classList.remove("hidden");
+      document.getElementById("scan-toggle").addEventListener("click", toggleScan);
+      document.getElementById("manual-submit").addEventListener("click", () => {
+        const token = document.getElementById("manual-token").value.trim();
+        if (token) submitToken(token);
+      });
+    } else {
+      document.getElementById("teacher-panel").classList.remove("hidden");
+      document.getElementById("generate-btn").addEventListener("click", generateQR);
+      document.getElementById("close-btn").addEventListener("click", closeSession);
+    }
+  })();
+</script>
+</body>
+</html>

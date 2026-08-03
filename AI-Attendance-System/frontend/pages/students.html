@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Students — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6">
+      <div class="card p-5">
+        <div class="flex flex-wrap items-center gap-3 justify-between mb-4">
+          <div class="flex flex-wrap gap-2">
+            <input id="search" class="input !w-56" placeholder="Search roll number..." />
+            <select id="dept-filter" class="input !w-auto"><option value="">All Departments</option></select>
+            <select id="sem-filter" class="input !w-auto">
+              <option value="">All Semesters</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5">Semester 5</option>
+              <option value="6">Semester 6</option>
+              <option value="7">Semester 7</option>
+              <option value="8">Semester 8</option>
+            </select>
+          </div>
+          <button id="add-btn" class="btn btn-primary">+ Add Student</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="text-left" style="color:var(--text-muted)">
+              <th class="py-2 px-3">Name</th><th class="py-2 px-3">Roll No</th><th class="py-2 px-3">Department</th>
+              <th class="py-2 px-3">Semester</th><th class="py-2 px-3">Face</th><th class="py-2 px-3">Status</th><th class="py-2 px-3"></th>
+            </tr></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <div id="pagination" class="flex items-center justify-between mt-4 text-sm"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4">
+  <div class="modal-backdrop absolute inset-0" onclick="UI.closeModal('edit-modal')"></div>
+  <div class="card glass relative z-10 w-full max-w-md p-6">
+    <h3 class="font-bold text-lg mb-4">Edit Student</h3>
+    <input type="hidden" id="edit-id" />
+    <label class="text-sm font-semibold mb-1 block">Full Name</label>
+    <input id="edit-name" class="input mb-3" />
+    <label class="text-sm font-semibold mb-1 block">Semester</label>
+    <input id="edit-semester" type="number" min="1" max="8" class="input mb-3" />
+    <label class="text-sm font-semibold mb-1 block">Section</label>
+    <input id="edit-section" class="input mb-5" />
+    <div class="flex gap-3">
+      <button class="btn btn-secondary flex-1" onclick="UI.closeModal('edit-modal')">Cancel</button>
+      <button id="save-edit" class="btn btn-primary flex-1">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let page = 1;
+  const pageSize = 12;
+  let isAdmin = false;
+
+  async function loadStudents() {
+    const params = new URLSearchParams({ page, page_size: pageSize });
+    const search = document.getElementById("search").value.trim();
+    const dept = document.getElementById("dept-filter").value;
+    const sem = document.getElementById("sem-filter").value;
+    if (search) params.set("search", search);
+    if (dept) params.set("department_id", dept);
+    if (sem) params.set("semester", sem);
+
+    document.getElementById("table-body").innerHTML = UI.skeletonRows(6, 7);
+    const res = await api.get(`/students?${params.toString()}`);
+    const rows = res.data || [];
+
+    document.getElementById("table-body").innerHTML =
+      rows
+        .map(
+          (s) => `<tr class="table-row border-t" style="border-color:var(--border)">
+        <td class="py-2 px-3 font-medium">${s.profiles?.full_name || "—"}</td>
+        <td class="py-2 px-3">${s.roll_number}</td>
+        <td class="py-2 px-3">${s.departments?.name || "—"}</td>
+        <td class="py-2 px-3">${s.semester}</td>
+        <td class="py-2 px-3">${s.face_registered ? "✅" : "❌"}</td>
+        <td class="py-2 px-3">${s.profiles?.is_active ? UI.statusBadge("approved") : UI.statusBadge("rejected")}</td>
+        <td class="py-2 px-3 text-right">
+          ${
+            isAdmin
+              ? `<button class="text-blue-500 font-semibold text-xs mr-3" onclick='openEdit(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Edit</button>
+                 <button class="text-red-500 font-semibold text-xs" onclick="deleteStudent('${s.id}')">Delete</button>`
+              : ""
+          }
+        </td>
+      </tr>`
+        )
+        .join("") || `<tr><td colspan="7" class="py-8 text-center" style="color:var(--text-muted)">No students found.</td></tr>`;
+
+    renderPagination(res.total);
+  }
+
+  function renderPagination(total) {
+    const pages = Math.max(Math.ceil(total / pageSize), 1);
+    document.getElementById("pagination").innerHTML = `
+      <span style="color:var(--text-muted)">Page ${page} of ${pages} · ${total} total</span>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary !px-3 !py-1.5" ${page <= 1 ? "disabled" : ""} onclick="changePage(-1)">Prev</button>
+        <button class="btn btn-secondary !px-3 !py-1.5" ${page >= pages ? "disabled" : ""} onclick="changePage(1)">Next</button>
+      </div>`;
+  }
+  function changePage(delta) { page += delta; loadStudents(); }
+
+  function openEdit(s) {
+    document.getElementById("edit-id").value = s.id;
+    document.getElementById("edit-name").value = s.profiles?.full_name || "";
+    document.getElementById("edit-semester").value = s.semester;
+    document.getElementById("edit-section").value = s.section || "";
+    UI.openModal("edit-modal");
+  }
+
+  async function deleteStudent(id) {
+    if (!confirm("Delete this student permanently? This cannot be undone.")) return;
+    await api.del(`/students/${id}`);
+    UI.toast("Student deleted", "success");
+    loadStudents();
+  }
+
+  document.getElementById("save-edit").addEventListener("click", async () => {
+    const id = document.getElementById("edit-id").value;
+    await api.put(`/students/${id}`, {
+      full_name: document.getElementById("edit-name").value,
+      semester: Number(document.getElementById("edit-semester").value),
+      section: document.getElementById("edit-section").value,
+    });
+    UI.toast("Student updated", "success");
+    UI.closeModal("edit-modal");
+    loadStudents();
+  });
+
+  document.getElementById("add-btn").addEventListener("click", () => {
+    window.location.href = "register.html";
+  });
+
+  ["search", "dept-filter", "sem-filter"].forEach((id) =>
+    document.getElementById(id).addEventListener("input", () => { page = 1; loadStudents(); })
+  );
+
+  (async () => {
+    const { role } = await renderLayout("students");
+    if (!role) return;
+    isAdmin = role === "admin";
+    document.getElementById("add-btn").classList.toggle("hidden", !isAdmin);
+
+    const { data } = await sb.from("departments").select("id, name").order("name");
+    const select = document.getElementById("dept-filter");
+    (data || []).forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.name;
+      select.appendChild(opt);
+    });
+
+    loadStudents();
+  })();
+</script>
+</body>
+</html>

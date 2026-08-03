@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Analytics — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6">
+      <div class="grid lg:grid-cols-2 gap-5 mb-5">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold">Attendance Trend</h3>
+            <select id="trend-period" class="input !w-auto !py-1.5 text-sm"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option></select>
+          </div>
+          <div class="h-72"><canvas id="line-chart"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-bold mb-3">Present / Absent / Late (Period)</h3>
+          <div class="h-72"><canvas id="bar-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-5 mb-5">
+        <div class="card p-5 lg:col-span-1">
+          <h3 class="font-bold mb-3">Department Wise (Today)</h3>
+          <div class="h-64"><canvas id="pie-chart"></canvas></div>
+        </div>
+        <div class="card p-5 lg:col-span-2">
+          <h3 class="font-bold mb-3">Attendance Heatmap Calendar</h3>
+          <p class="text-xs mb-3" style="color:var(--text-muted)">Requires a student to be selected (own record shown for students).</p>
+          <div id="heatmap" class="grid grid-cols-7 gap-1"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let lineChart, barChart, pieChart;
+
+  async function loadTrend(period) {
+    const trend = await api.get(`/analytics/trend?period=${period}`);
+    if (lineChart) lineChart.destroy();
+    lineChart = Charts.lineChart(
+      document.getElementById("line-chart"),
+      trend.map((t) => t.date.slice(5)),
+      [{ label: "Present", data: trend.map((t) => t.present) }, { label: "Absent", data: trend.map((t) => t.absent) }]
+    );
+
+    const totals = trend.reduce(
+      (acc, t) => ({ present: acc.present + t.present, absent: acc.absent + t.absent, late: acc.late + t.late }),
+      { present: 0, absent: 0, late: 0 }
+    );
+    if (barChart) barChart.destroy();
+    barChart = Charts.barChart(
+      document.getElementById("bar-chart"),
+      ["Present", "Absent", "Late"],
+      [{ label: "Count", data: [totals.present, totals.absent, totals.late] }]
+    );
+  }
+
+  async function loadDeptBreakdown() {
+    const depts = await api.get("/analytics/departments");
+    if (pieChart) pieChart.destroy();
+    pieChart = Charts.pieChart(document.getElementById("pie-chart"), depts.map((d) => d.department), depts.map((d) => d.present));
+  }
+
+  async function loadHeatmap(studentId) {
+    const now = new Date();
+    const data = await api.get(`/analytics/heatmap?student_id=${studentId}&year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
+    const byDate = Object.fromEntries(data.map((d) => [d.date, d.status]));
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const colorMap = { present: "#16a34a", late: "#d97706", absent: "#dc2626", leave: "#2563eb" };
+
+    let html = "";
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const status = byDate[key];
+      const bg = status ? colorMap[status] : "var(--border)";
+      html += `<div class="h-8 rounded-md flex items-center justify-center text-[10px] font-semibold" style="background:${bg}22; color:${status ? colorMap[status] : "var(--text-muted)"}; border:1px solid ${status ? colorMap[status] : "var(--border)"}" title="${key}: ${status || "no record"}">${d}</div>`;
+    }
+    document.getElementById("heatmap").innerHTML = html;
+  }
+
+  (async () => {
+    const { profile, role } = await renderLayout("analytics");
+    if (!profile) return;
+
+    await loadTrend("monthly");
+    await loadDeptBreakdown();
+    await loadHeatmap(profile.id);
+
+    document.getElementById("trend-period").addEventListener("change", (e) => loadTrend(e.target.value));
+  })();
+</script>
+</body>
+</html>

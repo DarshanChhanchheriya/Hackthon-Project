@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center relative px-4">
+<div class="hero-glow"></div>
+<div class="relative z-10 w-full max-w-md">
+  <div class="text-center mb-8">
+    <a href="../index.html" class="inline-flex items-center gap-2">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold">A</div>
+      <span class="font-extrabold text-xl tracking-tight">Attendify<span class="gradient-text">AI</span></span>
+    </a>
+  </div>
+
+  <form id="login-form" class="card p-8 fade-in">
+    <h1 class="text-2xl font-extrabold mb-1">Welcome back</h1>
+    <p class="text-sm mb-6" style="color:var(--text-muted)">Log in to your attendance dashboard.</p>
+
+    <label class="text-sm font-semibold mb-1 block">Email</label>
+    <input type="email" id="email" required class="input mb-4" placeholder="you@college.edu" />
+
+    <label class="text-sm font-semibold mb-1 block">Password</label>
+    <input type="password" id="password" required class="input mb-2" placeholder="••••••••" />
+    <div class="text-right mb-5"><a href="forgot-password.html" class="text-sm font-semibold text-blue-500">Forgot password?</a></div>
+
+    <button type="submit" id="submit-btn" class="btn btn-primary w-full">Log In</button>
+    <p class="text-sm text-center mt-6" style="color:var(--text-muted)">
+      Don't have an account? <a href="register.html" class="font-semibold text-blue-500">Create one</a>
+    </p>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script>
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+    try {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const profile = await api.get("/auth/me");
+      localStorage.setItem("profile", JSON.stringify(profile));
+      UI.toast(`Welcome back, ${profile.full_name.split(" ")[0]}!`, "success");
+      setTimeout(() => (window.location.href = "dashboard.html"), 500);
+    } catch (err) {
+      UI.toast(err.message || "Login failed", "error");
+      btn.disabled = false;
+      btn.textContent = "Log In";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AttendifyAI — Smart AI Attendance System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+<div class="hero-glow"></div>
+
+<header class="relative z-10 max-w-7xl mx-auto flex items-center justify-between px-6 py-6">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold">A</div>
+    <span class="font-extrabold text-lg tracking-tight">Attendify<span class="gradient-text">AI</span></span>
+  </div>
+  <nav class="hidden md:flex items-center gap-8 text-sm font-medium" style="color:var(--text-muted)">
+    <a href="#features" class="hover:text-blue-500">Features</a>
+    <a href="#how" class="hover:text-blue-500">How it works</a>
+    <a href="#roles" class="hover:text-blue-500">Roles</a>
+  </nav>
+  <div class="flex items-center gap-3">
+    <button onclick="toggleTheme()" class="btn btn-secondary !p-2"><span data-theme-icon>🌙</span></button>
+    <a href="pages/login.html" class="btn btn-secondary">Log in</a>
+    <a href="pages/register.html" class="btn btn-primary">Get Started</a>
+  </div>
+</header>
+
+<main class="relative z-10 max-w-7xl mx-auto px-6">
+  <section class="text-center pt-16 pb-20 fade-in">
+    <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold badge-leave mb-6">
+      🚀 Built for HackNova 2026 — Smart IT Solutions
+    </span>
+    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight">
+      Attendance, <span class="gradient-text">automated</span><br class="hidden sm:block" /> by face &amp; QR — in seconds.
+    </h1>
+    <p class="mt-6 text-lg max-w-2xl mx-auto" style="color:var(--text-muted)">
+      Replace error-prone manual roll calls with AI face recognition and secure QR check-ins.
+      Real-time analytics, leave management, and one-click reports for students, teachers and admins.
+    </p>
+    <div class="mt-10 flex items-center justify-center gap-4">
+      <a href="pages/register.html" class="btn btn-primary text-base px-7 py-3.5">Start Free →</a>
+      <a href="#how" class="btn btn-secondary text-base px-7 py-3.5">See how it works</a>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-20">
+    <div class="card p-5 text-center">
+      <p class="text-3xl font-extrabold gradient-text">99.2%</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">Face match accuracy</p>
+    </div>
+    <div class="card p-5 text-center">
+      <p class="text-3xl font-extrabold gradient-text">&lt;2s</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">Average mark time</p>
+    </div>
+    <div class="card p-5 text-center">
+      <p class="text-3xl font-extrabold gradient-text">120s</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">QR session expiry</p>
+    </div>
+    <div class="card p-5 text-center">
+      <p class="text-3xl font-extrabold gradient-text">3</p>
+      <p class="text-xs mt-1" style="color:var(--text-muted)">Role-based portals</p>
+    </div>
+  </section>
+
+  <section id="features" class="pb-20">
+    <h2 class="text-3xl font-extrabold text-center">Everything a campus needs</h2>
+    <p class="text-center mt-2" style="color:var(--text-muted)">One platform for face recognition, QR check-ins, leave, and analytics.</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
+      <div class="card p-6"><div class="text-3xl mb-3">🧠</div><h3 class="font-bold mb-1">Face Recognition</h3><p class="text-sm" style="color:var(--text-muted)">OpenCV + face_recognition with liveness &amp; blink detection to stop photo spoofing.</p></div>
+      <div class="card p-6"><div class="text-3xl mb-3">📱</div><h3 class="font-bold mb-1">QR Attendance</h3><p class="text-sm" style="color:var(--text-muted)">Secure, auto-expiring QR sessions prevent duplicate scans and proxy attendance.</p></div>
+      <div class="card p-6"><div class="text-3xl mb-3">📊</div><h3 class="font-bold mb-1">Live Analytics</h3><p class="text-sm" style="color:var(--text-muted)">Daily, weekly, monthly trends with department &amp; subject breakdowns.</p></div>
+      <div class="card p-6"><div class="text-3xl mb-3">🗓️</div><h3 class="font-bold mb-1">Leave Management</h3><p class="text-sm" style="color:var(--text-muted)">Students apply, teachers approve — reflected instantly in attendance history.</p></div>
+      <div class="card p-6"><div class="text-3xl mb-3">📄</div><h3 class="font-bold mb-1">One-click Reports</h3><p class="text-sm" style="color:var(--text-muted)">Export PDF, Excel or CSV for any period, department or student.</p></div>
+      <div class="card p-6"><div class="text-3xl mb-3">🔐</div><h3 class="font-bold mb-1">Secure by Design</h3><p class="text-sm" style="color:var(--text-muted)">Supabase Auth, JWT sessions, RLS policies, and rate-limited APIs.</p></div>
+    </div>
+  </section>
+
+  <section id="how" class="pb-20">
+    <h2 class="text-3xl font-extrabold text-center">How it works</h2>
+    <div class="grid sm:grid-cols-3 gap-5 mt-10">
+      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">1</div><h3 class="font-bold mb-1">Register</h3><p class="text-sm" style="color:var(--text-muted)">Students upload 5 face samples; admins onboard teachers &amp; departments.</p></div>
+      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">2</div><h3 class="font-bold mb-1">Check in</h3><p class="text-sm" style="color:var(--text-muted)">Teacher starts a session — students are recognized by camera or scan a QR code.</p></div>
+      <div class="card p-6"><div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-3">3</div><h3 class="font-bold mb-1">Track &amp; report</h3><p class="text-sm" style="color:var(--text-muted)">Dashboards update live; export reports whenever you need them.</p></div>
+    </div>
+  </section>
+
+  <section id="roles" class="pb-24">
+    <h2 class="text-3xl font-extrabold text-center">Built for every role</h2>
+    <div class="grid sm:grid-cols-3 gap-5 mt-10">
+      <div class="card p-6"><h3 class="font-bold mb-2">🎓 Student</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>View attendance %</li><li>Apply for leave</li><li>Scan QR / show face</li><li>Download reports</li></ul></div>
+      <div class="card p-6"><h3 class="font-bold mb-2">🧑‍🏫 Teacher</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Start/stop sessions</li><li>Generate QR codes</li><li>Approve leave</li><li>View class analytics</li></ul></div>
+      <div class="card p-6"><h3 class="font-bold mb-2">🛡️ Admin</h3><ul class="text-sm space-y-1" style="color:var(--text-muted)"><li>Manage students &amp; teachers</li><li>Assign departments</li><li>System-wide reports</li><li>Audit logs</li></ul></div>
+    </div>
+  </section>
+</main>
+
+<footer class="relative z-10 border-t py-8 text-center text-sm" style="border-color:var(--border); color:var(--text-muted)">
+  Built for HackNova 2026 · AttendifyAI © 2026
+</footer>
+
+<script src="assets/js/theme.js"></script>
+</body>
+</html>

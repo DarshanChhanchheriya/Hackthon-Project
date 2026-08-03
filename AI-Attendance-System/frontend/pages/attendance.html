@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Attendance Session — AttendifyAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="min-h-screen">
+<div class="flex">
+  <div id="app-sidebar"></div>
+  <div class="flex-1 min-w-0">
+    <div id="app-topbar"></div>
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-6">
+      <div class="grid lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white text-xl shrink-0">🔔</div>
+              <div>
+                <h2 class="font-bold text-lg">Attendance Session</h2>
+                <p class="text-sm" style="color:var(--text-muted)">Starting a session notifies every student instantly — they check in with their own camera.</p>
+              </div>
+            </div>
+            <span id="session-indicator" class="hidden items-center gap-2 text-xs font-semibold badge badge-present"><span class="pulse-dot"></span> LIVE</span>
+          </div>
+
+          <div id="setup-fields" class="grid sm:grid-cols-2 gap-3 mb-4">
+            <input id="subject" class="input" placeholder="Subject (e.g. Data Structures)" />
+            <select id="department_id" class="input"><option value="">All Departments</option></select>
+          </div>
+
+          <div id="idle-panel" class="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-14 text-center" style="border-color:var(--border)">
+            <div class="text-4xl mb-3">📡</div>
+            <p class="font-semibold">No session running</p>
+            <p class="text-sm mt-1 max-w-xs" style="color:var(--text-muted)">Start one and students in the selected department get notified to check in.</p>
+          </div>
+
+          <div id="live-panel" class="hidden rounded-2xl p-6 text-center" style="background:var(--accent-soft)">
+            <p class="text-xs font-semibold uppercase tracking-wide" style="color:var(--accent)">Session running for</p>
+            <p id="live-timer" class="text-4xl font-extrabold gradient-text mt-1">00:00</p>
+            <p id="live-subject" class="text-sm font-medium mt-2"></p>
+            <div class="flex justify-center gap-6 mt-4">
+              <div><p id="live-checked-in" class="text-2xl font-extrabold">0</p><p class="text-xs" style="color:var(--text-muted)">Checked in</p></div>
+              <div><p id="live-grace" class="text-2xl font-extrabold">10m</p><p class="text-xs" style="color:var(--text-muted)">Check-in window</p></div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 mt-4">
+            <button id="start-btn" class="btn btn-primary flex-1">▶ Start Attendance Session</button>
+            <button id="stop-btn" class="btn btn-danger flex-1 hidden">■ Stop Session</button>
+          </div>
+        </div>
+
+        <div class="card p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold">Live Check-in Roster</h3>
+            <span id="log-count" class="badge badge-present hidden">0 marked</span>
+          </div>
+          <div id="log-list" class="flex-1 space-y-2 overflow-y-auto max-h-[520px] pr-1">
+            <p class="text-sm text-center py-10" style="color:var(--text-muted)">Start a session to see check-ins appear here live.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 mt-5">
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-400 flex items-center justify-center text-white text-base shrink-0">✍️</div>
+          <div>
+            <h3 class="font-bold">Manual Override</h3>
+            <p class="text-xs" style="color:var(--text-muted)">For latecomers who missed the check-in window, or students leaving early. Applies to the subject above.</p>
+          </div>
+        </div>
+        <div class="relative mt-4 max-w-md">
+          <input id="manual-search" class="input" placeholder="Search by name or roll number..." autocomplete="off" />
+          <div id="manual-results" class="hidden absolute z-20 mt-1 w-full card glass max-h-64 overflow-y-auto"></div>
+        </div>
+        <div id="manual-selected" class="hidden mt-4 flex flex-wrap items-center gap-3 p-3 rounded-xl" style="background:var(--accent-soft)">
+          <div class="log-avatar" id="manual-selected-avatar"></div>
+          <div class="flex-1 min-w-[140px]">
+            <p id="manual-selected-name" class="font-semibold text-sm"></p>
+            <p id="manual-selected-roll" class="text-xs" style="color:var(--text-muted)"></p>
+          </div>
+          <button class="btn btn-secondary !py-1.5" onclick="markManual('late')">🕒 Mark Late</button>
+          <button class="btn btn-secondary !py-1.5" onclick="markManual('present')">✅ Mark Present</button>
+          <button class="btn btn-secondary !py-1.5" onclick="markManual('absent')">❌ Mark Absent</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/supabase-client.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/layout.js"></script>
+<script src="../assets/js/session-alerts.js"></script>
+<script>
+  let myProfile, currentSessionId, sessionStartedAt, timerInterval, pollInterval;
+  const seenAttendanceIds = new Set();
+
+  function pushLog(row) {
+    const list = document.getElementById("log-list");
+    if (list.children.length === 1 && list.children[0].tagName === "P") list.innerHTML = "";
+    const name = row.students?.profiles?.full_name || "Unknown";
+    const roll = row.students?.roll_number;
+    const initials = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+    const borderClass = row.status === "present" ? "ok" : row.status === "late" ? "warn" : "no";
+
+    const el = document.createElement("div");
+    el.className = "card log-card " + borderClass + " p-3 fade-in flex gap-3 items-start";
+    el.innerHTML = `
+      <div class="log-avatar">${initials}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-2">
+          <p class="font-semibold text-sm truncate">${name}</p>
+          ${UI.statusBadge(row.status)}
+        </div>
+        <p class="text-xs mt-1" style="color:var(--text-muted)">
+          ${roll ? `Roll ${roll} · ` : ""}${row.method.toUpperCase()}${row.confidence ? ` · ${row.confidence}%` : ""}
+        </p>
+        <p class="text-xs mt-1" style="color:var(--text-muted)">${UI.formatTime(row.marked_at)}</p>
+      </div>`;
+    list.prepend(el);
+
+    document.getElementById("log-count").textContent = `${seenAttendanceIds.size} marked`;
+    document.getElementById("log-count").classList.remove("hidden");
+    document.getElementById("live-checked-in").textContent = seenAttendanceIds.size;
+  }
+
+  async function pollRoster() {
+    if (!currentSessionId) return;
+    const res = await api.get(`/attendance?session_id=${currentSessionId}&page_size=50`).catch(() => null);
+    const rows = (res?.data || []).slice().reverse();
+    for (const row of rows) {
+      if (!seenAttendanceIds.has(row.id)) {
+        seenAttendanceIds.add(row.id);
+        pushLog(row);
+      }
+    }
+  }
+
+  function updateTimer() {
+    const secs = Math.floor((Date.now() - sessionStartedAt) / 1000);
+    const m = String(Math.floor(secs / 60)).padStart(2, "0");
+    const s = String(secs % 60).padStart(2, "0");
+    document.getElementById("live-timer").textContent = `${m}:${s}`;
+  }
+
+  async function startSession() {
+    const btn = document.getElementById("start-btn");
+    btn.disabled = true;
+    try {
+      const subject = document.getElementById("subject").value || null;
+      const departmentId = document.getElementById("department_id").value || null;
+      const session = await api.post("/sessions/start", { department_id: departmentId, subject });
+      currentSessionId = session.id;
+      seenAttendanceIds.clear();
+
+      UI.toast("Session started — students have been notified", "success");
+
+      document.getElementById("idle-panel").classList.add("hidden");
+      document.getElementById("live-panel").classList.remove("hidden");
+      document.getElementById("setup-fields").classList.add("hidden");
+      document.getElementById("start-btn").classList.add("hidden");
+      document.getElementById("stop-btn").classList.remove("hidden");
+      document.getElementById("session-indicator").classList.remove("hidden");
+      document.getElementById("session-indicator").classList.add("flex");
+      document.getElementById("live-subject").textContent = subject ? `Subject: ${subject}` : "All subjects";
+      document.getElementById("live-grace").textContent = `${session.punch_in_grace_minutes}m`;
+      document.getElementById("live-checked-in").textContent = "0";
+      document.getElementById("log-list").innerHTML = `<p class="text-sm text-center py-10" style="color:var(--text-muted)">Waiting for students to check in...</p>`;
+
+      sessionStartedAt = Date.now();
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+      pollInterval = setInterval(pollRoster, 3000);
+    } catch (err) {
+      UI.toast("Could not start session", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function stopSession() {
+    clearInterval(timerInterval);
+    clearInterval(pollInterval);
+    document.getElementById("idle-panel").classList.remove("hidden");
+    document.getElementById("live-panel").classList.add("hidden");
+    document.getElementById("setup-fields").classList.remove("hidden");
+    document.getElementById("start-btn").classList.remove("hidden");
+    document.getElementById("stop-btn").classList.add("hidden");
+    document.getElementById("session-indicator").classList.add("hidden");
+    if (currentSessionId) {
+      await api.put(`/sessions/${currentSessionId}/stop`, {}).catch(() => {});
+      UI.toast("Session stopped — face check-in is now closed for this session", "info");
+      currentSessionId = null;
+    }
+  }
+
+  document.getElementById("start-btn").addEventListener("click", startSession);
+  document.getElementById("stop-btn").addEventListener("click", stopSession);
+
+  // --- Manual override (latecomers / early leavers) ---
+  let manualSelectedStudent, manualSearchDebounce;
+
+  document.getElementById("manual-search").addEventListener("input", (e) => {
+    clearTimeout(manualSearchDebounce);
+    const query = e.target.value.trim();
+    const resultsEl = document.getElementById("manual-results");
+    if (!query) {
+      resultsEl.classList.add("hidden");
+      return;
+    }
+    manualSearchDebounce = setTimeout(async () => {
+      const res = await api.get(`/students?search=${encodeURIComponent(query)}&page_size=8`).catch(() => null);
+      const rows = res?.data || [];
+      if (!rows.length) {
+        resultsEl.innerHTML = `<p class="text-sm text-center py-4" style="color:var(--text-muted)">No students found</p>`;
+        resultsEl.classList.remove("hidden");
+        return;
+      }
+      resultsEl.innerHTML = rows
+        .map(
+          (s) => `<button type="button" class="w-full text-left px-4 py-2.5 text-sm hover:opacity-80 flex items-center justify-between" style="border-bottom:1px solid var(--border)" data-id="${s.id}" data-name="${(s.profiles?.full_name || "").replace(/"/g, "&quot;")}" data-roll="${s.roll_number || ""}">
+            <span>${s.profiles?.full_name || "—"}</span>
+            <span class="text-xs" style="color:var(--text-muted)">${s.roll_number || ""}</span>
+          </button>`
+        )
+        .join("");
+      resultsEl.classList.remove("hidden");
+      resultsEl.querySelectorAll("button[data-id]").forEach((btn) =>
+        btn.addEventListener("click", () => selectManualStudent(btn.dataset.id, btn.dataset.name, btn.dataset.roll))
+      );
+    }, 300);
+  });
+
+  function selectManualStudent(id, name, roll) {
+    manualSelectedStudent = { id, name, roll };
+    document.getElementById("manual-search").value = "";
+    document.getElementById("manual-results").classList.add("hidden");
+    document.getElementById("manual-selected").classList.remove("hidden");
+    document.getElementById("manual-selected-name").textContent = name || "Unknown";
+    document.getElementById("manual-selected-roll").textContent = roll ? `Roll ${roll}` : "";
+    document.getElementById("manual-selected-avatar").textContent = (name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  }
+
+  async function markManual(status) {
+    if (!manualSelectedStudent) return;
+    try {
+      await api.post("/attendance/manual", {
+        student_id: manualSelectedStudent.id,
+        teacher_id: myProfile.id,
+        subject: document.getElementById("subject").value || null,
+        status,
+      });
+      UI.toast(`${manualSelectedStudent.name} marked ${status}`, "success");
+      document.getElementById("manual-selected").classList.add("hidden");
+      manualSelectedStudent = null;
+    } catch (_) { /* toast already shown */ }
+  }
+
+  (async () => {
+    const { profile } = await renderLayout("attendance");
+    if (!profile) return;
+    myProfile = profile;
+
+    const { data } = await sb.from("departments").select("id, name").order("name");
+    const select = document.getElementById("department_id");
+    (data || []).forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.name;
+      select.appendChild(opt);
+    });
+  })();
+</script>
+</body>
+</html>

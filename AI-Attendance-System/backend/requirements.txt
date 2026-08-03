@@ -1,0 +1,28 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.9
+pydantic[email]>=2.9
+pydantic-settings>=2.5
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+supabase==2.7.4
+opencv-python-headless>=4.10
+numpy>=1.26
+
+# --- Face recognition (optional at runtime) ---
+# dlib has no prebuilt Windows wheel for newer Python versions; building it
+# from source requires CMake + a C++ toolchain (Visual Studio Build Tools on
+# Windows). The app starts and every non-face feature works without these
+# two packages installed — face endpoints return 503 until they're present.
+face_recognition>=1.3.0
+dlib>=19.24
+setuptools<81  # face_recognition_models still imports the deprecated pkg_resources API
+qrcode[pil]==7.4.2
+reportlab==4.2.2
+openpyxl==3.1.5
+pandas>=2.2
+python-dotenv==1.0.1
+slowapi==0.1.9
+loguru==0.7.2
+Pillow>=10.4
