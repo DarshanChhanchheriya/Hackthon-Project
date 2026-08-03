@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: "pip install -r requirements-cloud.txt"
+    buildCommand: "pip install -r requirements-cloud.txt && pip install --no-deps face_recognition==1.3.0"
     startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: ENV

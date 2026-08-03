@@ -1,15 +1,15 @@
-# Cloud deployment (Render) — everything from requirements.txt EXCEPT
-# dlib/face_recognition. Render's native Python runtime has no root access
-# during build, so it can't run apt-get to install the CMake/C++ toolchain
-# dlib needs to compile from source. The backend already handles this
-# gracefully: face endpoints return a 503 with a clear message instead of
-# crashing the whole app, so every other feature (auth, QR, leave,
-# analytics, reports, sessions, teacher punch-in via non-face fallback)
-# still works in production.
+# Cloud deployment (Render) — same as requirements.txt but swaps `dlib`
+# (source-only on PyPI, needs CMake + a C++ toolchain that Render's native
+# Python runtime doesn't have) for `dlib-bin`, a prebuilt-wheel drop-in
+# published by https://github.com/alesanfra/dlib-wheels that installs the
+# exact same `dlib` module with no compilation.
 #
-# To get real face recognition running in the cloud too, switch this
-# service to a Docker-based Render deploy with a Dockerfile that installs
-# cmake + build-essential, then use requirements.txt (not this file).
+# `face_recognition` itself still declares a hard dependency on the PyPI
+# `dlib` package by name, so it must be installed separately with --no-deps
+# (see render.yaml's buildCommand) — otherwise pip ignores dlib-bin and
+# tries to build real dlib from source anyway. face_recognition's actual
+# import-time requirements (dlib, numpy, Pillow, face_recognition_models)
+# are all satisfied by this file.
 
 fastapi>=0.115
 uvicorn[standard]>=0.30
@@ -22,6 +22,12 @@ passlib[bcrypt]==1.7.4
 supabase==2.7.4
 opencv-python-headless>=4.10
 numpy>=1.26
+
+# --- Face recognition (prebuilt, no compiler needed) ---
+dlib-bin>=20.0.1
+face_recognition_models>=0.3.0
+setuptools<81  # face_recognition_models still imports the deprecated pkg_resources API
+
 qrcode[pil]==7.4.2
 reportlab==4.2.2
 openpyxl==3.1.5
