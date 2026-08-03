@@ -168,14 +168,20 @@
   );
 
   (async () => {
-    const { data } = await sb.from("departments").select("id, name").order("name");
     const select = document.getElementById("department_id");
-    (data || []).forEach((d) => {
-      const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = d.name;
-      select.appendChild(opt);
-    });
+    try {
+      const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/auth/departments`);
+      if (!res.ok) throw new Error("Failed to load departments");
+      const data = await res.json();
+      (data || []).forEach((d) => {
+        const opt = document.createElement("option");
+        opt.value = d.id;
+        opt.textContent = d.name;
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      UI.toast("Couldn't load departments — check your connection and reload", "error");
+    }
   })();
 
   let newUserId, newUserRole;

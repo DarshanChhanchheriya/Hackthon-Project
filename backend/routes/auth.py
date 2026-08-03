@@ -15,6 +15,15 @@ from utils.logger import logger
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
+@router.get("/departments")
+def list_departments():
+    """Public, unauthenticated list of departments — used by the registration form
+    before the user has a session, so it must not depend on RLS letting anon reads through."""
+    supabase = get_supabase()
+    res = supabase.table("departments").select("id, name").order("name").execute()
+    return res.data
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest):
     supabase_anon = get_supabase_anon()
