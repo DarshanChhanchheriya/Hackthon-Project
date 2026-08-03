@@ -29,12 +29,14 @@
     color: #fff; font-weight: 800; margin-bottom: 0.75rem;
     box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
   }
-  .step-line-connector {
-    position: absolute; top: 20px; left: calc(50% + 20px); right: calc(-50% + 20px);
-    height: 2px; background: linear-gradient(90deg, var(--accent), transparent);
-    display: none;
+  .step-badge-ring {
+    position: relative;
   }
-  @media (min-width: 640px) { .step-line-connector { display: block; } }
+  .step-badge-ring::after {
+    content: "";
+    position: absolute; inset: -4px; border-radius: 999px;
+    border: 2px solid var(--accent); opacity: 0.35;
+  }
 
   .role-icon {
     width: 44px; height: 44px; border-radius: 12px;
@@ -63,7 +65,7 @@
     <a href="#roles" class="hover:text-blue-500 transition-colors">Roles</a>
   </nav>
   <div class="flex items-center gap-3">
-    <button onclick="toggleTheme()" class="btn btn-secondary !p-2"><span data-theme-icon>🌙</span></button>
+    <button onclick="toggleTheme()" class="btn btn-secondary !p-2"><span data-theme-icon class="inline-flex"></span></button>
     <a href="pages/login.html" class="btn btn-secondary">Log in</a>
     <a href="pages/register.html" class="btn btn-primary">Get Started</a>
   </div>
@@ -147,19 +149,17 @@
     <h2 class="text-3xl font-extrabold text-center reveal">How it works</h2>
     <div class="grid sm:grid-cols-3 gap-5 mt-10">
       <div class="card p-6 relative reveal">
-        <div class="step-num">1</div>
-        <div class="step-line-connector"></div>
+        <div class="step-num step-badge-ring">1</div>
         <h3 class="font-bold mb-1">Register</h3>
         <p class="text-sm" style="color:var(--text-muted)">Students complete face enrollment during signup; admins onboard teachers &amp; departments.</p>
       </div>
       <div class="card p-6 relative reveal">
-        <div class="step-num">2</div>
-        <div class="step-line-connector"></div>
+        <div class="step-num step-badge-ring">2</div>
         <h3 class="font-bold mb-1">Check in</h3>
         <p class="text-sm" style="color:var(--text-muted)">Teacher starts a session — students get notified instantly and check in with their face.</p>
       </div>
       <div class="card p-6 relative reveal">
-        <div class="step-num">3</div>
+        <div class="step-num step-badge-ring">3</div>
         <h3 class="font-bold mb-1">Track &amp; report</h3>
         <p class="text-sm" style="color:var(--text-muted)">Dashboards update live; export reports whenever you need them.</p>
       </div>

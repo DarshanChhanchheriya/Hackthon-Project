@@ -57,7 +57,7 @@ async function renderLayout(activeKey) {
         <h1 class="text-lg font-bold capitalize">${activeKey.replace("-", " ")}</h1>
       </div>
       <div class="flex items-center gap-3">
-        <button onclick="toggleTheme()" class="btn btn-secondary !p-2" title="Toggle theme"><span data-theme-icon>🌙</span></button>
+        <button onclick="toggleTheme()" class="btn btn-secondary !p-2" title="Toggle theme"><span data-theme-icon class="inline-flex"></span></button>
         <a href="notifications.html" class="btn btn-secondary !p-2" title="Notifications">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .53-.21 1.04-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         </a>
@@ -80,8 +80,7 @@ async function renderLayout(activeKey) {
   document.getElementById("app-topbar").outerHTML = topbarHtml;
   document.body.insertAdjacentHTML("beforeend", mobileSidebar);
 
-  const icon = document.querySelector("[data-theme-icon]");
-  if (icon) icon.textContent = (localStorage.getItem("theme") || "light") === "dark" ? "☀️" : "🌙";
+  window.syncThemeIcons?.();
 
   window.SessionAlerts?.init(profile);
 
