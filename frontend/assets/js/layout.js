@@ -28,7 +28,7 @@ async function renderLayout(activeKey) {
   const sidebarHtml = `
     <aside class="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 glass border-r px-4 py-6" style="border-color:var(--border)">
       <a href="dashboard.html" class="flex items-center gap-2 px-2 mb-8">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold">A</div>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-bold"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
         <span class="font-extrabold text-lg tracking-tight"><span class="gradient-text">Attendify</span></span>
       </a>
       <nav class="flex flex-col gap-1 flex-1">

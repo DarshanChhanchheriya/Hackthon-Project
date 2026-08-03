@@ -1,4 +1,4 @@
-# AttendifyAI — AI Attendance System
+# Attendify — AI Attendance System
 
 **HackNova 2026 · Theme: Smart IT Solutions for Real-World Problems**
 
