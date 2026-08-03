@@ -1,5 +1,15 @@
 services:
   - type: web
+    name: attendify-frontend
+    runtime: static
+    staticPublishPath: frontend
+    buildCommand: ""
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+
+  - type: web
     name: ai-attendance-api
     runtime: python
     plan: free
@@ -18,7 +28,7 @@ services:
       - key: SUPABASE_JWT_SECRET
         sync: false
       - key: CORS_ORIGINS
-        value: "https://your-app.vercel.app"
+        value: "https://attendify-frontend.onrender.com"
       - key: FACE_MATCH_THRESHOLD
         value: "0.70"
       - key: FACE_DISTANCE_TOLERANCE
