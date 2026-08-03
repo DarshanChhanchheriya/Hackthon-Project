@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     FACE_MATCH_THRESHOLD: float = 0.70  # confidence required to auto mark attendance
     FACE_DISTANCE_TOLERANCE: float = 0.6  # face_recognition's standard same-person distance cutoff
+    SCHOOL_TIMEZONE_OFFSET_HOURS: float = 5.5  # IST by default — used for punch-in deadline comparisons
     QR_EXPIRY_SECONDS: int = 120
 
     RATE_LIMIT_DEFAULT: str = "60/minute"

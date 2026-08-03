@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard — AttendifyAI</title>
+<title>Dashboard — Attendify</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
@@ -89,19 +89,22 @@
   <div class="modal-backdrop absolute inset-0" onclick="closePunchModal()"></div>
   <div class="card glass relative z-10 w-full max-w-md p-6 text-center">
     <h3 id="punch-modal-title" class="font-bold text-lg mb-1">Punch In</h3>
-    <p class="text-sm mb-4" style="color:var(--text-muted)">Look at the camera to verify your identity.</p>
+    <p id="punch-subtitle" class="text-sm mb-4" style="color:var(--text-muted)">Hold your face steady — verifying automatically.</p>
     <div class="relative rounded-2xl overflow-hidden bg-black aspect-square">
       <video id="punch-video" autoplay playsinline class="w-full h-full object-cover"></video>
       <div class="face-reticle">
         <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
         <div class="scan-line"></div>
       </div>
+      <div id="punch-spinner" class="absolute top-3 right-3 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-white" style="background:rgba(0,0,0,0.55)">
+        <span class="pulse-dot"></span> Scanning
+      </div>
     </div>
     <canvas id="punch-canvas" class="hidden"></canvas>
     <p id="punch-result" class="text-sm font-medium mt-4 min-h-[1.5em]"></p>
     <div class="flex gap-3 mt-4">
       <button class="btn btn-secondary flex-1" onclick="closePunchModal()">Cancel</button>
-      <button id="punch-capture-btn" class="btn btn-primary flex-1">Capture</button>
+      <button id="punch-capture-btn" class="btn btn-primary flex-1 hidden">Capture Now</button>
     </div>
   </div>
 </div>
@@ -198,12 +201,19 @@
     const inBtn = document.getElementById("punch-in-btn");
     const outBtn = document.getElementById("punch-out-btn");
 
-    if (!record || !record.punch_in_at) {
+    if (record?.holiday) {
+      textEl.innerHTML = `🎉 Today is a holiday (Sunday) — no punch-in required`;
+      inBtn.classList.add("hidden");
+      outBtn.classList.add("hidden");
+    } else if (!record || !record.punch_in_at) {
       textEl.textContent = "You haven't punched in yet today.";
       inBtn.classList.remove("hidden");
       outBtn.classList.add("hidden");
     } else if (!record.punch_out_at) {
-      textEl.innerHTML = `Punched in at ${UI.formatTime(record.punch_in_at)} ${UI.statusBadge(record.punch_in_status === "late" ? "late" : "present")}`;
+      const lateNote = record.punch_in_status === "late" && record.minutes_late
+        ? ` <span class="text-xs" style="color:var(--danger)">${record.minutes_late} min late</span>`
+        : "";
+      textEl.innerHTML = `Punched in at ${UI.formatTime(record.punch_in_at)} ${UI.statusBadge(record.punch_in_status === "late" ? "late" : "present")}${lateNote}`;
       inBtn.classList.add("hidden");
       outBtn.classList.remove("hidden");
     } else {
@@ -213,20 +223,35 @@
     }
   }
 
+  let punchAutoTimer, punchAutoAttempts, punchAutoStopped;
+  const PUNCH_AUTO_INTERVAL_MS = 2200;
+  const PUNCH_MANUAL_FALLBACK_ATTEMPTS = 5;
+
   async function openPunchModal(mode) {
     punchMode = mode;
+    punchAutoAttempts = 0;
+    punchAutoStopped = false;
     document.getElementById("punch-modal-title").textContent = mode === "punch-in" ? "Punch In" : "Punch Out";
+    document.getElementById("punch-subtitle").textContent = "Hold your face steady — verifying automatically.";
     document.getElementById("punch-result").textContent = "";
+    document.getElementById("punch-capture-btn").classList.add("hidden");
+    document.getElementById("punch-spinner").classList.remove("hidden");
     document.getElementById("punch-modal").classList.remove("hidden");
     try {
       punchStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       document.getElementById("punch-video").srcObject = punchStream;
+      clearInterval(punchAutoTimer);
+      punchAutoTimer = setInterval(() => {
+        if (!punchAutoStopped) attemptPunch(true);
+      }, PUNCH_AUTO_INTERVAL_MS);
     } catch (_) {
       UI.toast("Camera access denied", "error");
     }
   }
 
   function closePunchModal() {
+    punchAutoStopped = true;
+    clearInterval(punchAutoTimer);
     punchStream?.getTracks().forEach((t) => t.stop());
     punchStream = null;
     document.getElementById("punch-modal").classList.add("hidden");
@@ -234,7 +259,9 @@
 
   document.getElementById("punch-in-btn").addEventListener("click", () => openPunchModal("punch-in"));
   document.getElementById("punch-out-btn").addEventListener("click", () => openPunchModal("punch-out"));
-  document.getElementById("punch-capture-btn").addEventListener("click", async () => {
+  document.getElementById("punch-capture-btn").addEventListener("click", () => attemptPunch(false));
+
+  async function attemptPunch(isAuto) {
     const video = document.getElementById("punch-video");
     const canvas = document.getElementById("punch-canvas");
     canvas.width = video.videoWidth;
@@ -243,21 +270,34 @@
     const frame = canvas.toDataURL("image/jpeg", 0.85);
 
     const resultEl = document.getElementById("punch-result");
-    resultEl.textContent = "Verifying...";
+    if (!isAuto) resultEl.textContent = "Verifying...";
     try {
       const res = await api.post(`/teacher-attendance/${punchMode}`, { image_base64: frame });
-      resultEl.textContent = res.message;
-      if (res.status === "marked") {
-        UI.toast(res.message, "success");
+
+      if (res.status === "marked" || res.status === "already_punched_in" || res.status === "already_punched_out" || res.status === "holiday") {
+        clearInterval(punchAutoTimer);
+        resultEl.textContent = res.message;
+        UI.toast(res.message, res.status === "marked" ? "success" : "info");
         await refreshPunchStatus();
         setTimeout(closePunchModal, 1200);
+        return;
+      }
+
+      if (isAuto) {
+        punchAutoAttempts++;
+        resultEl.textContent = "Scanning for your face...";
+        if (punchAutoAttempts >= PUNCH_MANUAL_FALLBACK_ATTEMPTS) {
+          document.getElementById("punch-capture-btn").classList.remove("hidden");
+          document.getElementById("punch-subtitle").textContent = "Still not detected — try the manual capture button below.";
+        }
       } else {
-        UI.toast(res.message, "warning");
+        resultEl.textContent = res.message || "Face not recognized — try again.";
+        UI.toast(res.message || "Not recognized", "warning");
       }
     } catch (_) {
-      resultEl.textContent = "Failed. Try again.";
+      if (!isAuto) resultEl.textContent = "Failed. Try again.";
     }
-  });
+  }
 
   (async () => {
     const { profile, role } = await renderLayout("dashboard");

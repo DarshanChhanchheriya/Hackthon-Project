@@ -1,22 +1,40 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from config import get_settings
 from database import get_supabase
 from middleware.auth import require_teacher, CurrentUser
 from models.schemas import TeacherPunchRequest
 from services.face_recognition.recognizer import verify_self
 
 router = APIRouter(prefix="/teacher-attendance", tags=["Teacher Attendance"])
+settings = get_settings()
+
+
+def _school_now() -> datetime:
+    """UTC time shifted to the school's local timezone (IST by default) —
+    punch-in deadlines are set by admins in local wall-clock time, so
+    comparisons must happen in that same timezone, not raw UTC.
+    """
+    return datetime.now(timezone.utc) + timedelta(hours=settings.SCHOOL_TIMEZONE_OFFSET_HOURS)
+
+
+def _is_holiday(d: date) -> bool:
+    return d.weekday() == 6  # Sunday
 
 
 @router.post("/punch-in")
 def punch_in(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_teacher)):
     supabase = get_supabase()
-    today = date.today().isoformat()
+    local_now = _school_now()
+    today = local_now.date()
+
+    if _is_holiday(today):
+        return {"status": "holiday", "message": "Today is a holiday (Sunday) — no punch-in required"}
 
     existing = (
-        supabase.table("teacher_attendance").select("*").eq("teacher_id", user.id).eq("date", today).execute().data
+        supabase.table("teacher_attendance").select("*").eq("teacher_id", user.id).eq("date", today.isoformat()).execute().data
     )
     if existing and existing[0].get("punch_in_at"):
         return {"status": "already_punched_in", "message": "You've already punched in today", "record": existing[0]}
@@ -32,15 +50,16 @@ def punch_in(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_t
     teacher = supabase.table("teachers").select("punch_in_deadline").eq("id", user.id).single().execute().data
     deadline_str = (teacher or {}).get("punch_in_deadline") or "07:00:00"
     deadline_hour, deadline_minute = int(deadline_str[:2]), int(deadline_str[3:5])
+    deadline_dt = local_now.replace(hour=deadline_hour, minute=deadline_minute, second=0, microsecond=0)
 
-    now = datetime.now(timezone.utc)
-    is_late = (now.hour, now.minute) > (deadline_hour, deadline_minute)
+    minutes_late = max(0, int((local_now - deadline_dt).total_seconds() // 60))
+    is_late = minutes_late > 0
     punch_status = "late" if is_late else "on_time"
 
     row = {
         "teacher_id": user.id,
-        "date": today,
-        "punch_in_at": now.isoformat(),
+        "date": today.isoformat(),
+        "punch_in_at": datetime.now(timezone.utc).isoformat(),
         "punch_in_method": "face",
         "punch_in_confidence": result["confidence"],
         "punch_in_status": punch_status,
@@ -50,7 +69,9 @@ def punch_in(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_t
     else:
         supabase.table("teacher_attendance").insert(row).execute()
 
+    message = f"Punched in — on time ({local_now.strftime('%H:%M')})"
     if is_late:
+        message = f"Punched in — {minutes_late} minute{'s' if minutes_late != 1 else ''} late"
         profile = supabase.table("profiles").select("full_name").eq("id", user.id).single().execute().data
         teacher_name = (profile or {}).get("full_name", "A teacher")
         admins = supabase.table("profiles").select("id").eq("role", "admin").execute().data or []
@@ -60,20 +81,20 @@ def punch_in(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_t
                     {
                         "user_id": a["id"],
                         "title": "Late punch-in",
-                        "message": f"{teacher_name} punched in late today ({now.strftime('%H:%M')}, deadline was {deadline_str[:5]}).",
+                        "message": f"{teacher_name} punched in {minutes_late} minute{'s' if minutes_late != 1 else ''} late today (at {local_now.strftime('%H:%M')}, deadline was {deadline_str[:5]}).",
                         "type": "warning",
                     }
                     for a in admins
                 ]
             ).execute()
 
-    return {**result, "status": "marked", "punch_status": punch_status, "message": f"Punched in — marked {punch_status.replace('_', ' ')}"}
+    return {**result, "status": "marked", "punch_status": punch_status, "minutes_late": minutes_late, "message": message}
 
 
 @router.post("/punch-out")
 def punch_out(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_teacher)):
     supabase = get_supabase()
-    today = date.today().isoformat()
+    today = _school_now().date().isoformat()
 
     existing = (
         supabase.table("teacher_attendance").select("*").eq("teacher_id", user.id).eq("date", today).execute().data
@@ -100,14 +121,31 @@ def punch_out(payload: TeacherPunchRequest, user: CurrentUser = Depends(require_
 
 @router.get("/today")
 def today_record(user: CurrentUser = Depends(require_teacher)):
+    today = _school_now().date()
+    if _is_holiday(today):
+        return {"holiday": True, "message": "Today is a holiday (Sunday)"}
+
     supabase = get_supabase()
-    today = date.today().isoformat()
-    row = (
+    rows = (
         supabase.table("teacher_attendance")
         .select("*")
         .eq("teacher_id", user.id)
-        .eq("date", today)
+        .eq("date", today.isoformat())
         .execute()
         .data
     )
-    return row[0] if row else None
+    if not rows:
+        return None
+
+    row = rows[0]
+    if row.get("punch_in_status") == "late" and row.get("punch_in_at"):
+        teacher = supabase.table("teachers").select("punch_in_deadline").eq("id", user.id).single().execute().data
+        deadline_str = (teacher or {}).get("punch_in_deadline") or "07:00:00"
+        deadline_hour, deadline_minute = int(deadline_str[:2]), int(deadline_str[3:5])
+        punch_in_local = datetime.fromisoformat(row["punch_in_at"].replace("Z", "+00:00")) + timedelta(
+            hours=settings.SCHOOL_TIMEZONE_OFFSET_HOURS
+        )
+        deadline_dt = punch_in_local.replace(hour=deadline_hour, minute=deadline_minute, second=0, microsecond=0)
+        row["minutes_late"] = max(0, int((punch_in_local - deadline_dt).total_seconds() // 60))
+
+    return row

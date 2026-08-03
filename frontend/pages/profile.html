@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Profile — AttendifyAI</title>
+<title>Profile — Attendify</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
@@ -32,17 +32,27 @@
 
       <div id="face-card" class="hidden card p-6">
         <h3 class="font-bold mb-1">Face Registration</h3>
-        <p class="text-sm mb-4" style="color:var(--text-muted)">Capture 5 clear photos from slightly different angles for accurate recognition.</p>
+        <p id="face-card-subtitle" class="text-sm mb-4" style="color:var(--text-muted)">Start the camera and follow the prompts — 5 photos capture automatically.</p>
         <div class="relative rounded-2xl overflow-hidden bg-black aspect-video max-w-lg">
           <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
           <canvas id="canvas" class="hidden"></canvas>
+          <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none"></div>
+          <div id="oval-guide" class="face-oval-guide hidden">
+            <div class="oval"></div>
+            <p id="guide-instruction" class="face-guide-instruction">Get ready...</p>
+            <p id="guide-countdown" class="face-guide-countdown"></p>
+          </div>
+        </div>
+        <div class="flex justify-center gap-2 my-4 max-w-lg">
+          <div id="dot-capture-1" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+          <div id="dot-capture-2" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+          <div id="dot-capture-3" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+          <div id="dot-capture-4" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
+          <div id="dot-capture-5" class="w-3 h-3 rounded-full" style="background:var(--border)"></div>
         </div>
         <div class="flex items-center gap-3 mt-4">
           <button id="camera-btn" class="btn btn-secondary">Start Camera</button>
-          <button id="capture-btn" class="btn btn-primary" disabled>📸 Capture (<span id="capture-count">0</span>/5)</button>
-          <button id="submit-face-btn" class="btn btn-primary hidden">Register Face</button>
         </div>
-        <div id="thumbnails" class="grid grid-cols-5 gap-2 mt-4"></div>
       </div>
     </main>
   </div>
@@ -56,6 +66,7 @@
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/layout.js"></script>
 <script src="../assets/js/session-alerts.js"></script>
+<script src="../assets/js/guided-face-capture.js"></script>
 <script>
   let captures = [];
   let myProfile;
@@ -71,51 +82,57 @@
     localStorage.setItem("profile", JSON.stringify(myProfile));
   });
 
+  let enrollCancelled = false;
+
   document.getElementById("camera-btn").addEventListener("click", async () => {
     const video = document.getElementById("video");
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-    video.srcObject = stream;
-    document.getElementById("capture-btn").disabled = false;
-  });
-
-  document.getElementById("capture-btn").addEventListener("click", () => {
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    captures.push(dataUrl);
-    document.getElementById("capture-count").textContent = captures.length;
-
-    const img = document.createElement("img");
-    img.src = dataUrl;
-    img.className = "rounded-lg aspect-square object-cover border";
-    img.style.borderColor = "var(--border)";
-    document.getElementById("thumbnails").appendChild(img);
-
-    if (captures.length >= 5) {
-      document.getElementById("capture-btn").disabled = true;
-      document.getElementById("submit-face-btn").classList.remove("hidden");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      video.srcObject = stream;
+      document.getElementById("camera-btn").classList.add("hidden");
+      document.getElementById("oval-guide").classList.remove("hidden");
+      document.getElementById("face-card-subtitle").textContent = "Follow the prompts — each pose captures automatically.";
+      runGuidedCapture();
+    } catch (_) {
+      UI.toast("Camera access denied", "error");
     }
   });
 
-  document.getElementById("submit-face-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("submit-face-btn");
-    btn.disabled = true;
-    btn.textContent = "Registering...";
+  async function runGuidedCapture() {
+    const dotEls = [1, 2, 3, 4, 5].map((n) => document.getElementById(`dot-capture-${n}`));
+    captures = await GuidedFaceCapture.run({
+      video: document.getElementById("video"),
+      canvas: document.getElementById("canvas"),
+      instructionEl: document.getElementById("guide-instruction"),
+      countdownEl: document.getElementById("guide-countdown"),
+      dotEls,
+      isCancelled: () => enrollCancelled,
+      onCapture: () => {
+        const flash = document.getElementById("capture-flash");
+        flash.style.transition = "none";
+        flash.style.opacity = "0.85";
+        requestAnimationFrame(() => {
+          flash.style.transition = "opacity .3s ease";
+          flash.style.opacity = "0";
+        });
+      },
+    });
+
+    if (enrollCancelled || captures.length < 5) return;
+
+    document.getElementById("oval-guide").classList.add("hidden");
+    document.getElementById("face-card-subtitle").textContent = "Registering your face...";
     try {
       const res = await api.post("/face/enroll", { owner_id: myProfile.id, images_base64: captures });
       UI.toast(res.message, "success");
-      captures = [];
-      document.getElementById("thumbnails").innerHTML = "";
-      document.getElementById("capture-count").textContent = "0";
-      document.getElementById("submit-face-btn").classList.add("hidden");
+      document.getElementById("face-card-subtitle").textContent = "Face registered! You can re-capture anytime by starting the camera again.";
+      document.getElementById("camera-btn").classList.remove("hidden");
+      document.getElementById("camera-btn").textContent = "Re-capture Face";
     } catch (_) {
-      btn.disabled = false;
-      btn.textContent = "Register Face";
+      UI.toast("Face registration failed — try again.", "error");
+      document.getElementById("camera-btn").classList.remove("hidden");
     }
-  });
+  }
 
   (async () => {
     const { profile, role } = await renderLayout("profile");
