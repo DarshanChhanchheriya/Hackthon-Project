@@ -116,6 +116,7 @@
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/theme.js"></script>
+<script src="../assets/js/charts.js"></script>
 <script src="../assets/js/layout.js"></script>
 <script src="../assets/js/session-alerts.js"></script>
 <script>
@@ -130,14 +131,23 @@
     document.getElementById("stat-absent").textContent = overview.absent_today;
     document.getElementById("stat-percentage").textContent = overview.attendance_percentage + "%";
 
-    await loadTrend("monthly");
+    try {
+      await loadTrend("monthly");
+    } catch (err) {
+      console.error("Trend chart failed:", err);
+    }
+
     const depts = await api.get("/analytics/departments");
-    if (deptChartInstance) deptChartInstance.destroy();
-    deptChartInstance = Charts.pieChart(
-      document.getElementById("dept-chart"),
-      depts.map((d) => d.department),
-      depts.map((d) => d.present)
-    );
+    try {
+      if (deptChartInstance) deptChartInstance.destroy();
+      deptChartInstance = Charts.pieChart(
+        document.getElementById("dept-chart"),
+        depts.map((d) => d.department),
+        depts.map((d) => d.present)
+      );
+    } catch (err) {
+      console.error("Department chart failed:", err);
+    }
 
     const recent = await api.get("/attendance?page=1&page_size=8");
     document.getElementById("recent-activity-body").innerHTML = (recent.data || [])
@@ -306,13 +316,19 @@
     if (role === "student") {
       await loadStudentView(profile);
     } else {
-      await loadAdminTeacherView();
-      document.getElementById("trend-period").addEventListener("change", (e) => loadTrend(e.target.value));
-
+      // Reveal the punch-in card and load its status FIRST and independently —
+      // a chart-rendering failure below must never hide this from teachers.
       if (role === "teacher") {
         document.getElementById("teacher-punch-card").classList.remove("hidden");
-        await refreshPunchStatus();
+        refreshPunchStatus().catch((err) => console.error("Punch status failed:", err));
       }
+
+      try {
+        await loadAdminTeacherView();
+      } catch (err) {
+        console.error("Dashboard analytics failed to load:", err);
+      }
+      document.getElementById("trend-period").addEventListener("change", (e) => loadTrend(e.target.value));
     }
   })();
 </script>
