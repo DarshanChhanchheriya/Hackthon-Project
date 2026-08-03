@@ -19,7 +19,7 @@
     btn.setAttribute("aria-label", "Show password");
     btn.tabIndex = -1;
     btn.style.cssText =
-      "position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); background:none; border:none; padding:0; cursor:pointer; color:var(--text-muted); display:flex; align-items:center;";
+      "position:absolute; right:0.75rem; top:0; bottom:0; margin:0; background:none; border:none; padding:0; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; line-height:0;";
     btn.innerHTML = EYE;
     btn.addEventListener("click", () => {
       const show = input.type === "password";
