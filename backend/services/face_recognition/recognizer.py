@@ -1,10 +1,14 @@
 import numpy as np
-import face_recognition
 
 from config import get_settings
 from database import get_supabase
-from services.face_recognition.encoder import extract_face_encoding
+from services.face_recognition.encoder import extract_face_encoding, _require_face_recognition
 from utils.logger import logger
+
+try:
+    import face_recognition
+except ImportError:
+    face_recognition = None
 
 settings = get_settings()
 
