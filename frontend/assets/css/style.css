@@ -292,6 +292,12 @@ main { animation: fadeIn 0.4s ease both; }
   font-size: 0.8rem; font-weight: 600; white-space: nowrap;
 }
 
+/* Mirrors the front-camera preview horizontally so it feels natural (like
+   a real mirror / Zoom self-view) instead of backwards. Purely visual —
+   canvas.drawImage() still captures the true, unflipped frame underneath,
+   so face recognition accuracy is completely unaffected. */
+.mirror-video { transform: scaleX(-1); }
+
 .face-reticle { position: absolute; inset: 12% 28%; pointer-events: none; }
 .face-reticle .corner { position: absolute; width: 28px; height: 28px; border: 3px solid var(--accent-2); opacity: 0.9; }
 .face-reticle .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }

@@ -118,8 +118,8 @@
     <h1 class="text-2xl font-extrabold mb-1">Register your face</h1>
     <p id="face-step-subtitle" class="text-sm mb-6" style="color:var(--text-muted)">Step 2 of 2 — this is how you'll check in to class. Just start the camera and follow the prompts, 5 photos capture automatically.</p>
 
-    <div class="relative rounded-2xl overflow-hidden bg-black aspect-video">
-      <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+    <div class="relative rounded-2xl overflow-hidden bg-black aspect-[3/4] sm:aspect-video">
+      <video id="video" autoplay playsinline class="w-full h-full object-cover mirror-video"></video>
       <canvas id="canvas" class="hidden"></canvas>
       <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none"></div>
       <div id="oval-guide" class="face-oval-guide hidden">

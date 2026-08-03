@@ -24,7 +24,7 @@ window.SessionAlerts = (() => {
         <h3 id="checkin-title" class="font-bold text-lg mb-1">Face Check-in</h3>
         <p id="checkin-subtitle" class="text-sm mb-4" style="color:var(--text-muted)">Hold your face steady in the frame — checking in automatically.</p>
         <div class="relative rounded-2xl overflow-hidden bg-black aspect-square">
-          <video id="checkin-video" autoplay playsinline class="w-full h-full object-cover"></video>
+          <video id="checkin-video" autoplay playsinline class="w-full h-full object-cover mirror-video"></video>
           <div class="face-reticle">
             <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
             <div class="scan-line"></div>
