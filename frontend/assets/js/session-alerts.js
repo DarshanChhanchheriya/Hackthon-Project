@@ -199,15 +199,17 @@ window.SessionAlerts = (() => {
     if (banner) banner.remove();
     banner = document.createElement("div");
     banner.id = "session-banner";
-    banner.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-[150] card glass px-5 py-4 flex items-center gap-4 shadow-lg fade-in";
+    banner.className = "fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-[150] card glass px-4 sm:px-5 py-3 sm:py-4 flex flex-wrap items-center gap-3 sm:gap-4 shadow-lg fade-in w-[92vw] sm:w-auto max-w-md";
     banner.innerHTML = `
-      <span class="pulse-dot"></span>
-      <div>
-        <p class="font-semibold text-sm">Attendance session started${sessionSubject ? " — " + sessionSubject : ""}</p>
+      <span class="pulse-dot shrink-0"></span>
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold text-sm truncate">Attendance session started${sessionSubject ? " — " + sessionSubject : ""}</p>
         <p class="text-xs" style="color:var(--text-muted)">Check in now with your face before the window closes.</p>
       </div>
-      <button class="btn btn-primary !py-1.5" id="session-banner-checkin">Check In</button>
-      <button class="btn btn-secondary !p-2" onclick="document.getElementById('session-banner').remove()">✕</button>`;
+      <div class="flex gap-2 w-full sm:w-auto">
+        <button class="btn btn-primary !py-1.5 flex-1 sm:flex-initial" id="session-banner-checkin">Check In</button>
+        <button class="btn btn-secondary !p-2 shrink-0" onclick="document.getElementById('session-banner').remove()">✕</button>
+      </div>`;
     document.body.appendChild(banner);
     document.getElementById("session-banner-checkin").addEventListener("click", async () => {
       const session = await findActiveSessionForMe();

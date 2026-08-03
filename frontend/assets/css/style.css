@@ -123,6 +123,20 @@ html, body {
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
+/* Chrome/Edge paint autofilled inputs with their own white/pale-yellow
+   background via an internal box-shadow, ignoring our `background`
+   property entirely — this is what made fields flash white regardless of
+   theme. The inset box-shadow trick is the only reliable override. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-elev) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -170,6 +184,8 @@ html, body {
 }
 
 .fade-in { animation: fadeIn 0.35s ease both; }
+main { animation: fadeIn 0.4s ease both; }
+.card { animation: fadeIn 0.3s ease both; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
