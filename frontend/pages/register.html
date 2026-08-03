@@ -207,13 +207,18 @@
     };
 
     try {
-      const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || "Registration failed");
+      let res;
+      try {
+        res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch (networkErr) {
+        throw new Error("Can't reach the server — it may be waking up from sleep (free-tier hosting). Please wait ~20 seconds and try again.");
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(UI.formatError(body.detail, "Registration failed"));
       newUserId = body.user_id;
       newUserRole = role;
 

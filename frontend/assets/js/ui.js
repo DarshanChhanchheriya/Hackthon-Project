@@ -18,11 +18,27 @@ window.UI = (() => {
     info: '<svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
   };
 
+  // FastAPI error `detail` can be a string, a validation-error array of
+  // {msg, loc, ...} objects, or a nested object — normalize all of them
+  // to a readable string instead of letting them stringify to "[object Object]".
+  function formatError(detail, fallback = "Something went wrong") {
+    if (!detail) return fallback;
+    if (typeof detail === "string") return detail;
+    if (detail instanceof Error) return detail.message || fallback;
+    if (Array.isArray(detail)) {
+      const msgs = detail.map((d) => (d && typeof d === "object" ? d.msg || JSON.stringify(d) : String(d)));
+      return msgs.join("; ") || fallback;
+    }
+    if (typeof detail === "object") return detail.msg || detail.message || fallback;
+    return String(detail);
+  }
+
   function toast(message, type = "info", duration = 4000) {
     const container = ensureToastContainer();
     const el = document.createElement("div");
     el.className = "toast glass";
-    el.innerHTML = `${ICONS[type] || ICONS.info}<p class="text-sm font-medium" style="color:var(--text)">${message}</p>`;
+    const safeMessage = formatError(message, typeof message === "string" ? message : "Something went wrong");
+    el.innerHTML = `${ICONS[type] || ICONS.info}<p class="text-sm font-medium" style="color:var(--text)">${safeMessage}</p>`;
     container.appendChild(el);
     setTimeout(() => {
       el.style.opacity = "0";
@@ -68,5 +84,5 @@ window.UI = (() => {
     return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   }
 
-  return { toast, openModal, closeModal, skeletonRows, statusBadge, formatDate, formatTime };
+  return { toast, openModal, closeModal, skeletonRows, statusBadge, formatDate, formatTime, formatError };
 })();

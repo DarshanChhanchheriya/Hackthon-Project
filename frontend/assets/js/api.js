@@ -12,11 +12,18 @@ window.api = {
 
   async request(method, path, body) {
     const headers = await this._headers(!!body);
-    const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let res;
+    try {
+      res = await fetch(`${window.APP_CONFIG.API_BASE_URL}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (networkErr) {
+      const msg = "Can't reach the server — it may be waking up from sleep (free-tier hosting). Please try again in ~20 seconds.";
+      window.UI?.toast(msg, "error");
+      throw new Error(msg);
+    }
 
     if (res.status === 401) {
       window.Auth.signOut();
@@ -28,7 +35,7 @@ window.api = {
       let detail = `Request failed (${res.status})`;
       if (contentType.includes("application/json")) {
         const errBody = await res.json().catch(() => null);
-        detail = errBody?.detail || detail;
+        detail = window.UI?.formatError ? window.UI.formatError(errBody?.detail, detail) : (errBody?.detail || detail);
       }
       window.UI?.toast(detail, "error");
       throw new Error(detail);
