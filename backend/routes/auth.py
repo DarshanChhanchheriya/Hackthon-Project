@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
+from config import get_settings
 from database import get_supabase, get_supabase_anon
 from middleware.auth import get_current_user, CurrentUser
 from models.schemas import (
@@ -26,6 +27,20 @@ def list_departments():
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest):
+    if payload.role in ("teacher", "admin"):
+        settings = get_settings()
+        required_code = settings.TEACHER_SIGNUP_CODE if payload.role == "teacher" else settings.ADMIN_SIGNUP_CODE
+        if not required_code:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"{payload.role.capitalize()} self-registration is not configured yet. Contact your administrator.",
+            )
+        if not payload.access_code or payload.access_code != required_code:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Invalid or missing access code for {payload.role} registration.",
+            )
+
     supabase_anon = get_supabase_anon()
     supabase = get_supabase()
 

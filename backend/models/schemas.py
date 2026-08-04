@@ -18,6 +18,7 @@ class RegisterRequest(BaseModel):
     department_id: Optional[str] = None
     semester: Optional[int] = 1
     section: Optional[str] = None
+    access_code: Optional[str] = None  # required for role="teacher"/"admin", ignored for "student"
 
 
 class LoginRequest(BaseModel):

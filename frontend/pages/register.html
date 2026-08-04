@@ -101,6 +101,12 @@
         <input type="text" id="employee_id" class="input" placeholder="EMP1024" autocomplete="off" />
       </div>
 
+      <div id="access-code-field" class="mb-4 hidden sm:col-span-2">
+        <label class="text-sm font-semibold mb-1 block">Staff Access Code</label>
+        <input type="password" id="access_code" class="input" placeholder="Provided by your institution admin" autocomplete="off" />
+        <p class="text-xs mt-1" style="color:var(--text-muted)">Teacher and Admin accounts require a private code — this prevents anyone from self-registering as staff. Contact your admin if you don't have one.</p>
+      </div>
+
       <div class="mb-4 sm:col-span-2">
         <label class="text-sm font-semibold mb-1 block">Department</label>
         <select id="department_id" class="input" autocomplete="off" required><option value="" disabled hidden selected>Select a department</option></select>
@@ -166,9 +172,12 @@
     r.addEventListener("change", (e) => {
       const isStudent = e.target.value === "student";
       const isTeacher = e.target.value === "teacher";
+      const isStaff = e.target.value === "teacher" || e.target.value === "admin";
       document.getElementById("student-fields").classList.toggle("hidden", !isStudent);
       document.getElementById("semester-field").classList.toggle("hidden", !isStudent);
       document.getElementById("teacher-fields").classList.toggle("hidden", !isTeacher);
+      document.getElementById("access-code-field").classList.toggle("hidden", !isStaff);
+      document.getElementById("access_code").required = isStaff;
     })
   );
 
@@ -209,6 +218,7 @@
       roll_number: document.getElementById("roll_number").value || null,
       employee_id: document.getElementById("employee_id").value || null,
       semester: Number(document.getElementById("semester").value) || 1,
+      access_code: document.getElementById("access_code").value || null,
     };
 
     try {

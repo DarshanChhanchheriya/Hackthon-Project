@@ -25,3 +25,7 @@ services:
         value: "0.6"
       - key: QR_EXPIRY_SECONDS
         value: "120"
+      - key: TEACHER_SIGNUP_CODE
+        sync: false
+      - key: ADMIN_SIGNUP_CODE
+        sync: false

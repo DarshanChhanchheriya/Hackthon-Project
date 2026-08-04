@@ -25,6 +25,15 @@ class Settings(BaseSettings):
 
     RATE_LIMIT_DEFAULT: str = "60/minute"
 
+    # Self-registration for these two roles is gated behind a private code so a
+    # student can't just pick "Teacher" or "Admin" on the public signup form and
+    # get elevated access. Optional (not required) so a deployment that hasn't
+    # set these yet fails *closed* (teacher/admin signup blocked, everything
+    # else keeps working) instead of crashing the whole app on startup.
+    # Share the real values only with real staff — never hardcode them here.
+    TEACHER_SIGNUP_CODE: str | None = None
+    ADMIN_SIGNUP_CODE: str | None = None
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
