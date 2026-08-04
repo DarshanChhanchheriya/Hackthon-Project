@@ -12,6 +12,15 @@ from utils.logger import logger
 router = APIRouter(prefix="/face", tags=["Face Recognition"])
 
 
+@router.get("/status")
+def face_status(user: CurrentUser = Depends(get_current_user)):
+    """Lets the frontend check enrollment before opening the camera, instead of
+    only finding out after a doomed scan-and-fail loop."""
+    supabase = get_supabase()
+    rows = supabase.table("face_encodings").select("id").eq("owner_id", user.id).limit(1).execute().data
+    return {"enrolled": bool(rows)}
+
+
 @router.post("/enroll")
 def enroll_face(payload: FaceEnrollRequest, user: CurrentUser = Depends(require_any)):
     if user.role != "admin" and user.id != payload.owner_id:

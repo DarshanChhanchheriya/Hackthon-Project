@@ -239,6 +239,18 @@
   const PUNCH_MANUAL_FALLBACK_ATTEMPTS = 5;
 
   async function openPunchModal(mode) {
+    try {
+      const status = await api.get("/face/status");
+      if (!status.enrolled) {
+        UI.toast("You haven't enrolled your face yet — go to Profile to set it up first.", "warning", 6000);
+        setTimeout(() => (window.location.href = "profile.html"), 1200);
+        return;
+      }
+    } catch (_) {
+      // if the status check itself fails, fall through and let the normal
+      // punch flow surface whatever the real error is
+    }
+
     punchMode = mode;
     punchAutoAttempts = 0;
     punchAutoStopped = false;
