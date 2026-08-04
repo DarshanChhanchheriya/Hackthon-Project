@@ -104,6 +104,10 @@
   (async () => {
     const { profile, role } = await renderLayout("analytics");
     if (!profile) return;
+    if (role === "student") {
+      window.location.href = "dashboard.html";
+      return;
+    }
 
     await loadTrend("monthly");
     await loadDeptBreakdown();
