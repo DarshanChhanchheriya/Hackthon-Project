@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from postgrest.exceptions import APIError
 
 from database import get_supabase
 from middleware.auth import require_teacher, require_any, get_current_user, CurrentUser
@@ -38,12 +39,28 @@ def enroll_face(payload: FaceEnrollRequest, user: CurrentUser = Depends(require_
         )
 
     supabase = get_supabase()
-    supabase.table("face_encodings").delete().eq("owner_id", payload.owner_id).execute()
+
+    # Insert the new encodings BEFORE deleting the old ones — if the insert
+    # fails partway (network blip, bad data), the previous working enrollment
+    # stays intact instead of leaving the account with zero enrolled faces.
+    old_ids = [
+        row["id"]
+        for row in supabase.table("face_encodings").select("id").eq("owner_id", payload.owner_id).execute().data
+    ]
     rows = [
         {"owner_id": payload.owner_id, "encoding": enc, "sample_index": i + 1}
         for i, enc in enumerate(encodings)
     ]
-    supabase.table("face_encodings").insert(rows).execute()
+    try:
+        supabase.table("face_encodings").insert(rows).execute()
+    except APIError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save your new face data — your previous enrollment (if any) is unchanged. Please try again.",
+        ) from exc
+
+    if old_ids:
+        supabase.table("face_encodings").delete().in_("id", old_ids).execute()
 
     is_student = supabase.table("students").select("id").eq("id", payload.owner_id).execute().data
     if is_student:
