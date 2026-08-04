@@ -1,4 +1,7 @@
+import re
+
 from fastapi import APIRouter, HTTPException, status, Depends
+from postgrest.exceptions import APIError
 
 from config import get_settings
 from database import get_supabase, get_supabase_anon
@@ -14,6 +17,22 @@ from models.schemas import (
 from utils.logger import logger
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+def _friendly_db_error(exc: APIError) -> str:
+    """Turn a raw Postgres constraint violation into something a user can act on."""
+    message = exc.message or ""
+    if exc.code == "23505":  # unique_violation
+        if "roll_number" in message:
+            return "This roll number is already registered. Please use a different one."
+        if "employee_id" in message:
+            return "This employee ID is already registered. Please use a different one."
+        return "One of your details is already registered. Please double-check and try again."
+    if exc.code == "23502":  # not_null_violation
+        match = re.search(r'column "(\w+)"', message)
+        field = match.group(1) if match else "a required field"
+        return f"Missing required field: {field}. Please fill in all fields for your role."
+    return "Registration failed while saving your details. Please try again."
 
 
 @router.get("/departments")
@@ -59,36 +78,48 @@ def register(payload: RegisterRequest):
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration failed")
 
-    supabase.table("profiles").insert(
-        {
-            "id": user.id,
-            "email": payload.email,
-            "full_name": payload.full_name,
-            "role": payload.role,
-            "phone": payload.phone,
-        }
-    ).execute()
+    try:
+        supabase.table("profiles").insert(
+            {
+                "id": user.id,
+                "email": payload.email,
+                "full_name": payload.full_name,
+                "role": payload.role,
+                "phone": payload.phone,
+            }
+        ).execute()
 
-    if payload.role == "student":
-        supabase.table("students").insert(
-            {
-                "id": user.id,
-                "roll_number": payload.roll_number,
-                "department_id": payload.department_id,
-                "semester": payload.semester or 1,
-                "section": payload.section,
-            }
-        ).execute()
-    elif payload.role == "teacher":
-        supabase.table("teachers").insert(
-            {
-                "id": user.id,
-                "employee_id": payload.employee_id,
-                "department_id": payload.department_id,
-            }
-        ).execute()
-    elif payload.role == "admin":
-        supabase.table("admins").insert({"id": user.id, "employee_id": payload.employee_id}).execute()
+        if payload.role == "student":
+            supabase.table("students").insert(
+                {
+                    "id": user.id,
+                    "roll_number": payload.roll_number,
+                    "department_id": payload.department_id,
+                    "semester": payload.semester or 1,
+                    "section": payload.section,
+                }
+            ).execute()
+        elif payload.role == "teacher":
+            supabase.table("teachers").insert(
+                {
+                    "id": user.id,
+                    "employee_id": payload.employee_id,
+                    "department_id": payload.department_id,
+                }
+            ).execute()
+        elif payload.role == "admin":
+            supabase.table("admins").insert({"id": user.id, "employee_id": payload.employee_id}).execute()
+    except APIError as exc:
+        # Registration failed partway through (e.g. duplicate roll number/employee
+        # ID) — clean up the auth user and any partial profile row so we never
+        # leave a "ghost" account behind: a real login with no matching
+        # student/teacher/admin data, which breaks the rest of the app for them.
+        supabase.table("profiles").delete().eq("id", user.id).execute()
+        try:
+            supabase.auth.admin.delete_user(user.id)
+        except Exception:  # noqa: BLE001
+            logger.warning(f"Failed to clean up orphaned auth user {user.id} after registration error")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_friendly_db_error(exc)) from exc
 
     logger.info(f"Registered new {payload.role}: {payload.email}")
     return {"message": "Registration successful. Please verify your email.", "user_id": user.id}
