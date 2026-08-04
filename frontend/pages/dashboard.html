@@ -52,7 +52,7 @@
           </div>
         </div>
 
-        <div class="card p-5">
+        <div class="card p-5 mb-6">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-bold">Recent Activity</h3>
             <a href="attendance.html" class="text-sm font-semibold text-blue-500">Start session →</a>
@@ -61,6 +61,16 @@
             <table class="w-full text-sm">
               <thead><tr class="text-left" style="color:var(--text-muted)"><th class="py-2 px-3">Student</th><th class="py-2 px-3">Method</th><th class="py-2 px-3">Status</th><th class="py-2 px-3">Time</th></tr></thead>
               <tbody id="recent-activity-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <h3 class="font-bold mb-3">Recent Attendance History</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead><tr class="text-left" style="color:var(--text-muted)"><th class="py-2 px-3">Date</th><th class="py-2 px-3">Student</th><th class="py-2 px-3">Subject</th><th class="py-2 px-3">Method</th><th class="py-2 px-3">Status</th></tr></thead>
+              <tbody id="attendance-history-body"></tbody>
             </table>
           </div>
         </div>
@@ -161,6 +171,18 @@
         </tr>`
       )
       .join("") || `<tr><td colspan="4" class="py-6 text-center" style="color:var(--text-muted)">No attendance marked yet today.</td></tr>`;
+
+    document.getElementById("attendance-history-body").innerHTML = (recent.data || [])
+      .map(
+        (r) => `<tr class="table-row border-t" style="border-color:var(--border)">
+          <td class="py-2 px-3">${UI.formatDate(r.date)}</td>
+          <td class="py-2 px-3">${r.students?.profiles?.full_name || "—"}</td>
+          <td class="py-2 px-3">${r.subject || "—"}</td>
+          <td class="py-2 px-3 uppercase text-xs font-semibold" style="color:var(--text-muted)">${r.method}</td>
+          <td class="py-2 px-3">${UI.statusBadge(r.status)}</td>
+        </tr>`
+      )
+      .join("") || `<tr><td colspan="5" class="py-6 text-center" style="color:var(--text-muted)">No attendance history yet.</td></tr>`;
   }
 
   async function loadTrend(period) {
