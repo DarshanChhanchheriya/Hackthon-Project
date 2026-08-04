@@ -31,7 +31,7 @@
   }
 
   function init() {
-    document.querySelectorAll('input[type="password"]').forEach(wrap);
+    document.querySelectorAll('input[type="password"]:not([aria-hidden="true"])').forEach(wrap);
   }
 
   document.addEventListener("DOMContentLoaded", init);
