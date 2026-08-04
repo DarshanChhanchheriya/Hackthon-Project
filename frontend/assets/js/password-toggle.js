@@ -9,17 +9,18 @@
     input.dataset.toggleWrapped = "1";
 
     const wrapper = document.createElement("div");
-    wrapper.style.position = "relative";
+    wrapper.style.cssText = "position:relative; display:flex; align-items:stretch;";
     input.parentNode.insertBefore(wrapper, input);
     wrapper.appendChild(input);
     input.style.paddingRight = "2.75rem";
+    input.style.flex = "1";
 
     const btn = document.createElement("button");
     btn.type = "button";
     btn.setAttribute("aria-label", "Show password");
     btn.tabIndex = -1;
     btn.style.cssText =
-      "position:absolute; right:0.75rem; top:0; bottom:0; margin:0; background:none; border:none; padding:0; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; line-height:0;";
+      "position:absolute; right:0.75rem; top:0; bottom:0; margin:auto 0; height:1.25rem; background:none; border:none; padding:0; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; line-height:0;";
     btn.innerHTML = EYE;
     btn.addEventListener("click", () => {
       const show = input.type === "password";
